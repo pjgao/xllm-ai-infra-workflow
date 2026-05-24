@@ -267,6 +267,28 @@ Artifact:
 - Accuracy: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/accuracy/gsm8k_limit10/reports/Qwen35-27B/gsm8k.json`
 - Profiling: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/profiling/mtp3_transpose_decode32_out200_cards8_11_20260525_005812/PROF_000001_20260525005815694_BQNAKJOMRDIQFFAA`
 
+### 2026-05-25 MTP accept mask 小算子反例
+
+目标：优化 `RejectionSampler::build_accepted_mask()`，尝试减少 MTP accept/verify 路径中的 `Range/ArgMax` 小算子。
+
+验证环境：TP=4, Phy 8-11, random 20k/1k, `parallel=1`, `number=5`, chunk prefill, MTP=3。基线为上述 transpose-opt。
+
+| 版本 | 实现 | Avg Latency(s) | TTFT(ms) | TPOT(ms) | Output TPS | Decoded/Iter | Accept |
+|------|------|----------------|----------|----------|------------|--------------|--------|
+| transpose-opt baseline | 原始 `argmax + arange + <=` | 14.03 | 2471.5 | 11.57 | 69.31 | 3.13 | 68.0% |
+| cumprod mask | `accepted.to(int32).cumprod(dim=1).to(bool) + cat` | 14.12 | 2325.3 | 11.81 | 68.87 | 2.98 | 66.4% |
+| bool-prefix mask | 短 `n_spec` 上 slice + `logical_and` 前缀 + cat | 14.16 | 2458.4 | 11.71 | 68.69 | 3.00 | 66.6% |
+
+结论：
+- 这两个 Torch-level mask 改写都未超过 transpose-opt baseline，不能作为有效优化提交。
+- `cumprod` 虽减少 `Range/ArgMax`，但引入更重的前缀扫描；`bool-prefix` 避免 dtype 转换和扫描，但多个 slice/logical_and/cat 仍不足以抵消开销。
+- 后续若继续做 accept/verify 小算子，应走真正的融合 kernel 或复用现有 `kernel::rejection_sample` 路径，并同时处理 selected-only draft probs；不要再在 eager Torch 层局部替换 `build_accepted_mask()`。
+
+Artifact:
+- Cumprod benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_smallop/perf/random20k_1k_p1_n5/20260525_012954/Qwen35-27B/performance_summary.txt`
+- Bool-prefix benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_smallop_boolprefix/perf/random20k_1k_p1_n5/20260525_013755/Qwen35-27B/performance_summary.txt`
+- 单测：两版均通过 `sampler_test`（11 passed, 2 MLU-only skipped）。
+
 ## 输出契约
 
 返回：

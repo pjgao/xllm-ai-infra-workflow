@@ -45,3 +45,11 @@
   - Profiling: `Transpose` 505.08 ms / 36,701 calls → 205.86 ms / 12,604 calls
   - Accuracy: GSM8K `limit=10`, `mean_acc=1.0`
 - 结论：在当前 TP=4 + MTP=3 + chunk prefill 的长输入场景，Transpose 消除仍然有效，但剩余瓶颈已转向 MatMul、AllReduce/AllGather 和 MTP accept/verify 小算子。
+
+### 反例记录：MTP accept mask Torch-level 改写
+- 结论：不计入有效优化，代码不提交到 xLLM。
+- 尝试：
+  - `cumprod` mask：Output TPS 68.87，TPOT 11.81 ms。
+  - bool-prefix mask：Output TPS 68.69，TPOT 11.71 ms。
+- 对照：transpose-opt baseline Output TPS 69.31，TPOT 11.57 ms。
+- 经验：局部替换 `build_accepted_mask()` 的 eager Torch 小算子不足以带来收益；后续要做 accept/verify，应优先融合为单 kernel 或扩展现有 `kernel::rejection_sample` 路径。
