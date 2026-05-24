@@ -234,6 +234,39 @@ Decode-focused 五表要点：
 2. 其次做 MTP accept/verify 逻辑融合，目标是减少 `Range/Pack/Concat/Softmax/ArgMax/Cumsum` 等小 op 和 host sync。
 3. 再评估 TP=4 AllReduce/AllGather overlap 或批量化通信，重点看 decode 阶段 `allreduceAicpuKernel` + HCCL allreduce/allgather 的高占比。
 
+### 2026-05-25 MTP=3 Transpose 消除验证
+
+代码：在 `qwen3_gated_delta_net_base.{cpp,h}` 恢复 MTP spec-verify Transpose 消除逻辑：
+- `run_spec_verify_conv()` 改为接收/返回 `[B,T,C]`，避免内部 `transpose(1,2)` round-trip。
+- spec-verify 分支缓存 `conv_weight_transposed_`，避免每步重复 `conv_weight.transpose(0,1).contiguous()`。
+- `process_mixed_qkv()` 根据输入布局决定是否 transpose。
+
+构建补充：当前 CANN op_api 的 `aclnnBeamSearchGroupGetWorkspaceSize()` 多了 `topK` 参数，需在 `beam_search_rec.cpp` 传 `top_tokens.size(-1)` 才能完整链接。
+
+Benchmark 对比（TP=4, Phy 8-11, random 20k/1k, `parallel=1`, `number=5`, chunk prefill, MTP=3）：
+
+| 版本 | Avg Latency(s) | TTFT(ms) | TPOT(ms) | Output TPS | Decoded/Iter | Accept |
+|------|----------------|----------|----------|------------|--------------|--------|
+| before | 14.564 | 2524.8 | 12.05 | 66.82 | 3.21 | 68.8% |
+| transpose-opt | 14.03 | 2471.5 | 11.57 | 69.31 | 3.13 | 68.0% |
+
+Decode-focused profiling 对比（32 input / 200 output, rank0）：
+
+| 指标 | before | transpose-opt | 变化 |
+|------|--------|----------------|------|
+| Transpose time | 505.08 ms | 205.86 ms | -59.2% |
+| Transpose calls | 36,701 | 12,604 | -65.7% |
+| Device total | 5310.22 ms | 5005.63 ms | -5.7% |
+| Decode TPOT | 10.62 ms | 9.90 ms | -6.8% |
+| Output TPS | 66.25 | 69.70 | +5.2% |
+
+精度冒烟：GSM8K `limit=10`，`mean_acc=1.0`，evalscope RC=0，无服务异常。
+
+Artifact:
+- Benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/benchmark/random_20k_1k_parallel_1_number_5/evalscope.log`
+- Accuracy: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/accuracy/gsm8k_limit10/reports/Qwen35-27B/gsm8k.json`
+- Profiling: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/profiling/mtp3_transpose_decode32_out200_cards8_11_20260525_005812/PROF_000001_20260525005815694_BQNAKJOMRDIQFFAA`
+
 ## 输出契约
 
 返回：

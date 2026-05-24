@@ -34,3 +34,14 @@
   - Transpose device time: 211.9→21.1 ms (-190.8 ms)
 - 文档参考：commit `38b4eb6`，Section 9 of `skills/xllm-npu-profiler/references/qwen35-27b-kernel-profile.md`
 - 补丁归档：`patches/qwen3_gated_delta_net_base.{cpp,h}`
+
+## Qwen3.5-27B（2026-05-25，910B3 A3，TP=4，20k/1k random）
+
+### 有效优化 #3：MTP=3 Transpose 消除（TileLang 回退后）
+- 收益：Output TPS 66.82→69.31 (+3.7%)，TPOT 12.05→11.57 ms (-4.0%)
+- 方法：恢复 MTP spec-verify Transpose 消除逻辑；为当前 CANN op_api 补 `beam_search_rec` 的 `topK` 参数以完成构建。
+- 证据：
+  - Benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/benchmark/random_20k_1k_parallel_1_number_5/evalscope.log`
+  - Profiling: `Transpose` 505.08 ms / 36,701 calls → 205.86 ms / 12,604 calls
+  - Accuracy: GSM8K `limit=10`, `mean_acc=1.0`
+- 结论：在当前 TP=4 + MTP=3 + chunk prefill 的长输入场景，Transpose 消除仍然有效，但剩余瓶颈已转向 MatMul、AllReduce/AllGather 和 MTP accept/verify 小算子。
