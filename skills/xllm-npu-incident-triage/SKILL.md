@@ -171,6 +171,30 @@ npu-smi info -t memory
 - Mooncake 全局 KV Cache 状态
 - 节点健康状态
 
+#### 2.7 构建/环境异常 → Build Environment 调试
+
+症状：`python setup.py build --device npu` 明显比平时慢，或出现与改动无关的编译/链接错误。
+
+先判断是否为环境污染，不要直接归因到本次代码修改：
+- OPP 头文件与源码/库不匹配：常见表现是 `aclnnBeamSearchGroup` 签名不一致，或头文件里仍带旧的 `topK` 参数。
+- build cache 里的 libtorch 架构错误：常见表现是链接时报 `_deps/libtorch-src/lib/libtorch.so: file in wrong format`。
+- Python 开发头缺失：常见表现是找不到 `Python.h`。
+- TileLang/小算子缓存被重新触发生成：会让一次普通 build 变成长时间编译，不代表业务代码本身需要这么久。
+- vcpkg 或依赖缓存锁在沙箱里不可写：会表现为 lock/cache 相关失败。
+
+快速检查：
+```bash
+grep -n "aclnnBeamSearchGroup" /usr/local/Ascend/ascend-toolkit/latest/opp/vendors/xllm/op_api/include/aclnn_beam_search_group.h
+file build/cmake.linux-aarch64-cpython-311/_deps/libtorch-src/lib/libtorch.so
+file /usr/local/lib64/python3.11/site-packages/torch/lib/libtorch.so
+```
+
+处理原则：
+- 标准路径仍应是 `python setup.py build --device npu`；如果需要额外 `CMAKE_ARGS`、临时 OPP 目录或 libtorch symlink，要在验证报告里显式标注为环境规避。
+- 不建议直接覆盖系统 `/usr/local/Ascend/.../opp/vendors/xllm`，优先使用匹配当前源码的临时 OPP vendor 目录，或在干净环境重新安装 xllm ops。
+- 若 build 因 cache 命中错误架构 libtorch 失败，只清理/修正 build artifact，避免改动源码来绕过环境问题。
+- 构建异常解决后，仍需做 `sampler_test`、短请求 smoke、目标 workload perf 与小样本精度验证。
+
 ### Step 3: 复现工作流
 
 详见 [references/replay-workflow.md](references/replay-workflow.md)。
