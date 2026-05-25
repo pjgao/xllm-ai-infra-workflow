@@ -212,6 +212,40 @@ GSM8K 10 条数据未发现精度异常。
 
 结论：MTP=3 仍显著优于 no MTP。
 
+### 追加源码与短 decode 复核
+
+继续审视后，当前提交不能称为 vLLM async schedule 同类优化。代码实际做的是：
+
+1. 在 target validate `step_async()` 后创建 `DraftExtendPrepareContext`；
+2. 在 `future.get()` 前提前执行部分 `base_input.to(device_, dtype_)` 和 `token_ids` / `positions` / `block_tables` 的 CPU view/copy；
+3. target validate 返回后再根据 `validate_output.next_tokens` 和 `validate_output.embeddings` 完成 `finish_draft_extend_inputs()`；
+4. 真正的 `draft_impl_->step_async(extend_input)` 仍然发生在 target 完成之后。
+
+因此该提交没有实现“draft 模型提前下发计算”。它只把一部分 host/input 准备工作挪到 target future 等待之前，最多能覆盖很薄的一段准备时间；如果 `safe_to(..., CPU)` 或 `ForwardInput::to()` 在 target 计算期间触发 D2H/H2D 拷贝、默认 stream 依赖或 runtime 同步，反而会干扰 target 计算。
+
+本轮补跑了一个 decode-focused smoke，用于和历史 profiling 形态对齐：
+
+- Workload：random 32 input / 200 output，`parallel=1`，`number=1`
+- 结果目录：`/home/g00510989/xllm/runs/20260525_pr1541_minimal_eaff9517/profiling/mtp3_minimal_decode32_out200_cards8_11_20260525_161500/evalscope/20260525_161923/Qwen35-27B`
+
+| 版本 | Avg Latency | TTFT | TPOT | Output TPS | Decode TPS | Decoded/Iter | Accept |
+|------|-------------|------|------|------------|------------|--------------|--------|
+| before transpose profiling | 3.02s | 906.20ms | 10.62ms | 66.25 | 94.16 | 3.43 | 70.9% |
+| transpose-opt profiling | 2.87s | 899.55ms | 9.90ms | 69.70 | 101.03 | 3.49 | 71.0% |
+| PR #1541 minimal | 2.94s | 964.61ms | 9.94ms | 67.99 | 100.60 | 3.49 | 71.4% |
+
+解读：
+
+- 短 decode 场景没有出现灾难性退化，TPOT/Decode TPS 接近 transpose-opt profiling。
+- 但它也没有证明调度提交带来收益：Output TPS 低于 transpose-opt profiling，TTFT 更差，且该场景 `number=1` 方差较大。
+- 20k/1k 主验收 workload 仍显示 Output TPS、TPOT、Decode TPS 相比历史 MTP=3 基线回落；因此 PR 结论不变：不能作为有效性能优化合入。
+
+msprof 动态采集尝试：
+
+- 非沙箱启动服务成功，evalscope 请求成功。
+- `msprof --dynamic=on --pid=<rank0>` 运行后未正常导出 `msprof_*.db`，只保留 evalscope 和 server logs。
+- 后续若继续追，需要改用可控的 `msprof --application ...` 或确认 dynamic profiling 的 stop/export 流程，避免只得到交互式采集输出。
+
 ### 与早期 async draft overlap 全量实验的关系
 
 早期全量实验中还包含非最小化修改，性能结果更好。当前最小化分支相对早期全量实验偏低，但该对比不是严格同环境：
