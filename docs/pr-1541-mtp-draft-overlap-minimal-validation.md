@@ -222,11 +222,13 @@ GSM8K 10 条数据未发现精度异常。
 - evalscope random 的实际输入 token 数有波动；
 - `number=5` 单轮测试方差较大。
 
-因此最终 PR 结论应采用谨慎表述：已通过精度验证；相比 no MTP 仍有收益；相比历史 MTP=3 基线有轻微性能回落信号，建议在干净环境用同一二进制重跑 baseline 与 PR 进行最终裁决。
+因此最终 PR 结论应采用 no-go 表述：已通过精度验证，但这只能说明结果没错，不能证明优化有效。该 PR 的核心卖点是 MTP draft preparation 提前下发/调度 overlap；当前数据没有证明该特性带来正收益，反而相比历史 MTP=3 基线有 decode 侧轻微回落信号。在缺少 profiling 解释和严格 A/B 正收益前，不应作为性能优化 PR 继续推进合入，应先 hold/draft。
 
 ## 后续建议
 
-1. 在 Preview 干净环境重新执行 `python setup.py build --device npu`，避免临时 OPP 和 libtorch cache 规避影响判断。
-2. 用同一服务二进制分别跑 baseline commit 与 PR commit，固定 random seed、输入 token 统计和 NPU 映射。
-3. 对 MTP=3 采集 profiling，重点看 draft extend preparation overlap 是否减少 host/device 空泡，同时确认是否引入新的同步点。
-4. 若官方 Preview 已完全回退 TileLang 算子，验证日志中不应再依赖 fused TileLang kernel；否则需要把小算子状态作为结果解释的一部分。
+1. 先暂停合入/标记 draft，不再把该结果描述为已验证有效的性能优化。
+2. 在 Preview 干净环境重新执行 `python setup.py build --device npu`，避免临时 OPP 和 libtorch cache 规避影响判断。
+3. 用同一服务二进制分别跑 baseline commit 与 PR commit，固定 random seed、输入 token 统计和 NPU 映射。
+4. 对 MTP=3 采集 profiling，重点看 draft extend preparation overlap 是否减少 host/device 空泡，同时确认是否引入新的同步点。
+5. 若 profiling 不能证明空泡减少，或 A/B 仍无吞吐/TPOT 正收益，应撤回或重做该调度提交。
+6. 若官方 Preview 已完全回退 TileLang 算子，验证日志中不应再依赖 fused TileLang kernel；否则需要把小算子状态作为结果解释的一部分。
