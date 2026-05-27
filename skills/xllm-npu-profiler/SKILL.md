@@ -243,6 +243,12 @@ Decode-focused 五表要点：
 
 复盘后的更准确根因：非 MTP decode 路径已经走 `causal_conv1d`，并复用了权重预 reshape/预布局路径，所以不会在每个 decode step 重复做 weight/layout transpose；MTP spec-verify 路径没有复用 `causal_conv1d`，而是手工构造 `CausalConv1dUpdateParams` 调用 `causal_conv1d_update`，因此重新引入了输入输出和 weight layout 适配。当前 transpose-opt 是有效减损，但不是最终结构性修复；下一版应优先尝试让 MTP 复用 `causal_conv1d` 路径或新增等价 fused spec-verify causal conv。
 
+2026-05-27 复用路径 prototype 经验：
+- 优先复用非 MTP decode 的 `causal_conv1d`，而不是继续局部修补 `causal_conv1d_update` 的 transpose。实现上让 MTP spec-verify 输入/输出保持 `[B,T,C]`，直接使用 `load_common_state_dict()` 中已经预布局的 conv weight。
+- `aclnnCausalConv1d` 的 `query_start_loc/cache_indices/num_accepted_tokens` 是 host `IntArrayRef`，因此 MTP accepted-prefix 需要在 `ModelInputParams` 中保留 host vector；ACL graph capture params 也要同步做 padding。
+- 重要风险：host `IntArrayRef` 在 ACL graph replay 中可能被固化为 capture 属性，而旧 `causal_conv1d_update` 的 accepted-prefix 是 device tensor，可以 replay 动态更新。graph on/off 必须分别做 10 条精度验证；如果 graph replay 下 accepted-prefix 不能动态变化，应改为 fused/tensor 参数算子或保守 fallback。
+- 构建经验：`python setup.py build` 先做 submodule commit 校验；如果 `third_party/tilelang-ascend` 或 `third_party/torch_npu_ops` checkout 与主仓记录不一致，会在编译前失败。直接 Ninja 重链可能暴露 `ops_api.cpp` 与 `torch_npu_ops` 接口不匹配，不能用这种状态做性能结论。
+
 构建补充：当前 CANN op_api 的 `aclnnBeamSearchGroupGetWorkspaceSize()` 多了 `topK` 参数，需在 `beam_search_rec.cpp` 传 `top_tokens.size(-1)` 才能完整链接。
 
 Benchmark 对比（TP=4, Phy 8-11, random 20k/1k, `parallel=1`, `number=5`, chunk prefill, MTP=3）：
