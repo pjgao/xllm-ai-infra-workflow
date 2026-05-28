@@ -6,6 +6,7 @@
 - 相同 NPU 数量：对比双方使用相同卡数
 - 相同 `ASCEND_RT_VISIBLE_DEVICES`：可见设备列表一致
 - 记录 NPU 驱动版本（HDK Driver >= 25.2.0）
+- 性能测试前后必须保存 `npu-smi info` 和目标卡 `npu-smi info -t usages`，确认目标卡没有外部计算或未知 HBM 占用
 
 ## 软件环境
 
@@ -49,6 +50,8 @@
 - 记录每次运行的完整启动命令
 - 保留失败候选及失败原因
 - 候选之间重启服务或清除状态
+- 如果 `npu-smi info` 进程表出现 `ps` 查不到的 PID、目标卡启动前已有大额 HBM 占用、或服务空闲态 `AICore/NPU Utilization` 不稳定接近 0，本轮结果只能作为 debug/smoke 数据，不能进入正式对比
+- before/after 的环境门禁信息必须一起归档；缺少门禁记录时，不要在 PR 或 skill 里写百分比收益
 
 ## 结果排序
 
