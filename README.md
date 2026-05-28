@@ -1,42 +1,60 @@
 # xllm-npu-optimization-skills
 
-Agent-ready playbooks for LLM inference optimization on Huawei Ascend NPU
-(910B3/A3), with xLLM as the primary implementation target and vLLM-Ascend /
-SGLang as reusable comparison baselines.
+Agent-ready playbooks for large-model serving and AI Infra optimization on
+Huawei Ascend NPU (910B3/A3), with xLLM as the first fully recorded landing
+case and vLLM-Ascend / SGLang as reusable comparison baselines and shared
+workflow targets.
+
+对标参考仓库：[AI-Infra-Auto-Driven-SKILLS](https://github.com/BBuf/AI-Infra-Auto-Driven-SKILLS)
+主要框架目标：[xLLM](https://github.com/jd-opensource/xllm)、[vLLM-Ascend](https://github.com/vllm-project/vllm-ascend)、SGLang NPU 后端
 
 ## 仓库定位
 
-为华为昇腾 NPU 910B3 (A3) 上的模型推理优化提供一套可复用的 Agent
-工作流。当前重点服务 xLLM，同时保留对 vLLM-Ascend、SGLang 等推理框架的
-横向对比能力，用于识别框架调度、算子、KV cache、spec decode 和 serving
-路径上的优化机会。
+本仓库沉淀一套 **NPU AI Infra Auto-Driven Workflow**：面向昇腾 NPU 上的
+大模型推理框架，用统一证据标准驱动 benchmark、profiling、capacity
+planning、incident triage、code review、kernel pilot、PR history 查询和
+SOTA loop。
 
-本仓库提供：
-- 公平基准测试（xLLM / vLLM-Ascend / SGLang 等框架）
+当前已有经验主要来自 xLLM + Qwen3.5-27B + MTP 在 910B3/A3 上的真实优化。
+这些经验会继续保留为 case study；后续新增能力应尽量拆成“通用 NPU
+流程”和“框架适配层”，使同一套流程能服务：
+
+| 框架 | 角色 | 当前状态 |
+|------|------|---------|
+| xLLM | 首个完整落地框架 | 已有 benchmark、profiling、patch、MTP 优化和事故记录 |
+| vLLM-Ascend | 公平对照与共同优化目标 | 已作为 benchmark 对照组，后续补 profiler/capacity/incident 适配 |
+| SGLang NPU | 扩展目标 | 复用 BBuf/SGLang GPU SKILLS 思路，迁移到 NPU 后端 |
+
+因此，本仓库提供：
+- 多框架公平基准测试（xLLM / vLLM-Ascend / SGLang NPU）
 - 昇腾 Profiling 五表分析报告
+- NPU pipeline / layer / rank / MFU / capacity 证据栈（规划中逐步补齐）
 - RLCR（Research-Learn-Code-Review）驱动的 SOTA 自治优化循环
 - NPU 特化代码审查
-- 生产事故诊断
+- 生产事故诊断与 replay-first 排障
 - 精度异常定位与 commit 二分
 - PR 驱动模型知识库
-- NPU 内核证据辅助
+- NPU 内核证据辅助（TileLang / AscendC / Triton-Ascend）
+
+通用流程详见：[通用 NPU 大模型推理与 AI Infra 开发工作流](docs/npu-ai-infra-standard-workflow.md)。
+与 BBuf 原仓库的差距和实现计划详见：[待实现能力与路线规划](docs/implementation-roadmap-vs-ai-infra-skills.md)。
 
 ## 核心 Skills
 
-| Skill | 说明 |
-|-------|------|
-| [`xllm-npu-benchmark`](skills/xllm-npu-benchmark/SKILL.md) | xLLM / vLLM-Ascend / SGLang 等推理框架的公平基准测试 |
-| [`xllm-npu-profiler`](skills/xllm-npu-profiler/SKILL.md) | 昇腾 Profiling 五表分析 |
-| [`xllm-npu-sota-loop`](skills/xllm-npu-sota-loop/SKILL.md) | NPU SOTA 自治优化循环 |
-| [`xllm-npu-code-review`](skills/xllm-npu-code-review/SKILL.md) | NPU 特化代码审查 |
-| [`xllm-npu-accuracy-debug`](skills/xllm-npu-accuracy-debug/SKILL.md) | 精度异常定位、A/B 验证和 commit 二分 |
-| [`xllm-npu-incident-triage`](skills/xllm-npu-incident-triage/SKILL.md) | NPU 生产事故诊断 |
+| Skill | 说明 | 对标 |
+|-------|------|------|
+| [`xllm-npu-benchmark`](skills/xllm-npu-benchmark/SKILL.md) | NPU 多框架公平基准测试；当前覆盖 xLLM vs vLLM-Ascend，规划扩展 SGLang NPU | `llm-serving-auto-benchmark` |
+| [`xllm-npu-profiler`](skills/xllm-npu-profiler/SKILL.md) | 昇腾 Profiling 五表分析；当前以 xLLM trace 为主，规划统一多框架产物 schema | `llm-torch-profiler-analysis` |
+| [`xllm-npu-sota-loop`](skills/xllm-npu-sota-loop/SKILL.md) | NPU SOTA 自治优化循环；以 xLLM 为首个 target，流程可迁移到 vLLM-Ascend / SGLang | `sglang-sota-humanize-loop` |
+| [`xllm-npu-code-review`](skills/xllm-npu-code-review/SKILL.md) | NPU 特化代码审查；覆盖 C++ engine、图模式、KV Cache、HCCL、TileLang/AscendC | `sglang-humanize-review` |
+| [`xllm-npu-accuracy-debug`](skills/xllm-npu-accuracy-debug/SKILL.md) | 精度异常定位、A/B 验证和 commit 二分 | `sglang-accuracy-debug` |
+| [`xllm-npu-incident-triage`](skills/xllm-npu-incident-triage/SKILL.md) | NPU 生产事故诊断与 replay-first 排障 | `sglang-prod-incident-triage` |
 
 ## 辅助层
 
 | 组件 | 说明 |
 |------|------|
-| [`model-pr-optimization-history`](model-pr-optimization-history/SKILL.md) | xLLM 模型家族 PR 驱动历史档案 |
+| [`model-pr-optimization-history`](model-pr-optimization-history/SKILL.md) | PR 驱动模型历史档案；当前以 xLLM 为主，规划扩展 vLLM-Ascend / SGLang |
 | [`kernel-pilot`](kernel-pilot/SKILL.md) | NPU 内核证据辅助（TileLang/AscendC/Triton-Ascend） |
 
 ## 环境要求
@@ -44,8 +62,8 @@ SGLang as reusable comparison baselines.
 - 华为昇腾 910B3 (A3) NPU
 - HDK Driver >= 25.2.0
 - CANN >= 8.0.RC1
-- xLLM 框架（主要优化目标，建议使用待验证 commit）
-- vLLM-Ascend、SGLang 或其他 OpenAI API 兼容推理服务（可选对照组）
+- 至少一个目标推理框架：xLLM、vLLM-Ascend、SGLang NPU 后端
+- 对照框架按任务选择；做 SOTA 对比时必须记录各框架 commit、容器镜像和完整启动命令
 
 ## 目录结构
 
@@ -59,9 +77,13 @@ xllm-npu-optimization-skills/
 │   ├── ENVIRONMENT.md                       # 环境配置指南
 │   ├── ai-infra-analysis.md                # Agent 技能体系设计参考
 │   ├── environment-info.md                  # 环境信息采集
+│   ├── implementation-roadmap-vs-ai-infra-skills.md # 对标 BBuf 原仓库的实现路线
+│   ├── npu-ai-infra-standard-workflow.md    # 通用 NPU AI Infra 标准流程
 │   ├── pr-1400-qwen3-next-weight-transform-race.md # PR #1400 精度定位
 │   ├── pr-1536-mtp-transpose-elimination.md # PR #1536 分析
+│   ├── pr-1541-mtp-draft-overlap-minimal-validation.md # PR #1541 最小验证
 │   ├── qwen35-27b-optimization-guide.md     # Qwen3.5-27B 优化指南
+│   ├── zhihu-bbuf-skill-repo-analysis.md    # BBuf 文章与本仓库逻辑分析
 │   └── xllm-npu-optimization-design.md      # NPU 优化设计方案
 │
 ├── references/                              # 全局引用文件
@@ -176,3 +198,18 @@ done
 3. `model-pr-optimization-history`：查询历史 PR
 4. `xllm-npu-sota-loop`：RLCR 迭代优化
 5. `kernel-pilot`：针对热点 kernel 的专项优化
+
+通用多框架示例：
+
+```text
+> 在 Qwen3-32B 上，比较 xLLM、vLLM-Ascend、SGLang NPU 在 A3 上的
+> OpenAI-compatible serving 性能，使用相同 workload 和 SLA，输出公平
+> benchmark、profiling 五表、gap 判定和下一步优化 plan。
+```
+
+预期执行路径：
+1. 记录三个框架的 commit、启动参数、NPU/CANN/容器环境。
+2. 使用同一 workload 和 SLA 做 config-driven benchmark。
+3. 只对落后且 gap > 1% 的框架进入 profiling。
+4. 用统一 NPU 五表 + capacity / compute 证据定位瓶颈。
+5. 对目标框架执行单 patch RLCR，结果回写 humanize ledger 和 PR history。

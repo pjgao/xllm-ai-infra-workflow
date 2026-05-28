@@ -7,6 +7,25 @@
 
 ---
 
+## 0. 通用化说明
+
+本文最初以 xLLM 为主要落地对象，因此大量源码路径、案例和 patch 讨论都
+围绕 xLLM 展开。这些内容是仓库当前最重要的实测经验，应继续保留。
+
+仓库后续定位会从“xLLM NPU 优化 skill”扩展为“xLLM、vLLM-Ascend、
+SGLang NPU 共用的 NPU 大模型推理和 AI Infra 开发工作流”。扩展时遵循
+两层结构：
+
+- **通用 NPU 证据层**：公平 benchmark、profiling 五表、capacity、
+  compute simulation、MFU、incident artifact、review rubric、RLCR ledger。
+- **框架适配层**：xLLM、vLLM-Ascend、SGLang 各自的启动命令、日志格式、
+  metrics endpoint、profiling 采集方式、源码路径和 PR history。
+
+因此，本文后续章节仍可作为 xLLM 适配层和首个 case study 阅读；通用流程
+以 `docs/npu-ai-infra-standard-workflow.md` 为准。
+
+---
+
 ## 1. xllm 框架现状分析
 
 ### 1.1 架构
