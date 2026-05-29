@@ -51,6 +51,12 @@ git diff $MERGE_BASE..HEAD
 - 无大数据对象（tensor、vector）的不必要拷贝
 - 线程安全：正确锁机制，无数据竞争
 
+**配置归属**：
+- 避免直接在业务代码中读取 `FLAGS_*`，但修复方式不是把同一个 flag 复制到另一个 Config。
+- 先判断配置语义归属：服务接入/限流属于 `ServiceConfig`，调度 token/seq budget 属于 `SchedulerConfig`，KV cache/内存属于 `KVCacheConfig`。
+- 如果下游算法需要某个值，优先通过已有 owner config 读取后写入 Options/EstimateOptions 等入参结构；不要为了调用方便制造第二个 source of truth。
+- 看到同名字段同时出现在多个 Config 时，要检查初始化顺序、JSON dump/load、默认值漂移和 PR review 中的“避免 FLAGS”是否被误解。
+
 #### 3.2 TileLang 算子
 
 **算子开发**（对照 `tilelang-ascend-kernel` skill）：
@@ -214,6 +220,31 @@ auto conv_out = causal_conv1d_update_v2(x, conv_weight_transposed_, ...);
 **是否可以合并？** Yes (after fix)
 
 **理由：** 修复正确解决了 weight shape 传递反转问题，v2 kernel 对 kernel_width ∈ [1,6] 的约束得到满足。
+
+## 真实案例：PR #1496 max_concurrent_requests 配置归属
+
+### 背景
+
+PR #1496 修复高并发下 linear state block 预留不足问题。最初代码为了让 block 数按 `max_concurrent_requests + 2` 预留，直接读取了 `FLAGS_max_concurrent_requests`。review 指出这违反 xLLM 风格：业务路径应通过 Config/Options 传参，而不是散落读取全局 flag。
+
+### 错误修复
+
+后续修改把 `max_concurrent_requests` 加进了 `SchedulerConfig`，并从 `SchedulerConfig::get_instance().max_concurrent_requests()` 读取。这修掉了“直接读 FLAGS”的表面问题，但引入了更深的问题：
+
+- `max_concurrent_requests` 已经属于 `ServiceConfig`，用于服务接入/限流。
+- `SchedulerConfig` 负责 token/sequence batch 调度预算，不是请求接入并发上限的 owner。
+- 同一个 flag 同时进入 `ServiceConfig` 和 `SchedulerConfig`，会形成两个 source of truth，增加默认值、JSON 配置和初始化顺序漂移风险。
+
+### 正确修复
+
+- 保留 `ServiceConfig::max_concurrent_requests` 作为唯一配置来源。
+- 在 LLM/VLM engine 组装 `KVCacheEstimateOptions` 时，从 `ServiceConfig` 读取并传入 `estimate_kv_cache_capacity()`。
+- 保留 `KVCacheEstimateOptions::max_concurrent_requests`，因为这是容量估算函数的显式输入，不是配置 owner。
+- 不把 `max_concurrent_requests` 放入 `SchedulerConfig` 的 option category、property、from_flags/from_json 或 config dump。
+
+### 复盘结论
+
+“不要直接读 FLAGS”不是“把字段搬到任意 Config”。修复前必须先确定配置语义归属，再通过局部 Options/EstimateOptions 向下游传递。配置 owner 只能有一个。
 
 ## 参考资料
 
