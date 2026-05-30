@@ -277,9 +277,11 @@ python scripts/render_triage_npu.py \
 
 | 检查维度 | 健康值 | 异常信号 |
 |---------|-------|---------|
+| MTP 启用证据 | rank 日志同时有 `draft_model_path`、`Using draft devices`、`Speculative decode is enabled` | 只有 `--num_speculative_tokens` 或 evalscope accept rate，不能证明进了外置 draft |
+| draft 权重 | Qwen3.5 已用 `tools/export_mtp.py` 导出独立 `*-mtp` 目录 | 直接拿主模型目录当 draft，或没有 `mtp_layer_parameters.safetensors` |
 | `--num_speculative_tokens` | 依 workload 扫描；20k/1k random TP=4 当前为 `nst=3` | 只看 accept rate 选择更大 nst，可能被 draft/verify 开销反噬 |
-| Spec Accept Rate | nst=3 场景约 68-71% | <40% 表明 draft 质量或 nst 设置不当 |
-| Decoded Tok/Iter | nst=3 场景约 3.2-3.4 | 明显低于 nst+1 上限且 TPOT 不降，需检查 draft/verify |
+| Spec Accept Rate | nst=3 场景约 68-71%，但必须结合服务端日志判断 | evalscope 该指标由 streaming chunks 推导；单独出现不能证明 MTP 生效 |
+| Decoded Tok/Iter | nst=3 场景约 3.2-3.4，且不应明显超过 nst+1 | 明显低于上限且 TPOT 不降，需检查 draft/verify；明显超过上限多半是 chunk 聚合假象 |
 | reserved_linear_bytes | nst=3 约 4.54 GB | >6 GB 表明 draft+verification 内存压力大 |
 | KV Cache blocks | nst=3 约 3414 blocks | 长上下文或高并发下 blocks 下降会限制容量 |
 | Prefill warmup 时间 | ≤baseline | 2x baseline → draft prefill penalty 主导延迟 |
@@ -288,6 +290,7 @@ python scripts/render_triage_npu.py \
 - 旧 TP=2 / 96 input / 100 output 场景：`nst=1` 最优，`nst=2` 为严重负优化。
 - 当前 TP=4 / random 20k input / 1k output / chunk prefill 场景：`nst=3` 最优；`nst=4/5` accept rate 更高但端到端吞吐下降。
 - MTP 主要改善 decode/TPOT；长 prompt 的 TTFT 仍由 prefill 主导，不应用 TTFT 单独判断 MTP 是否有效。
+- 对 MTP trace 做结论前，先保存启动日志并证明进入 `SpeculativeEngine` / `MTPWorkerImpl`。profiling 中应能看到 draft/validate 相关路径或 MTP 专属 kernel；如果只有 evalscope `Spec Accept Rate`，该 run 只能记为“疑似 speculative 指标”，不能作为 MTP 优化依据。
 
 ### 2026-05-25 TP=4 / MTP=3 Profiling 记录
 

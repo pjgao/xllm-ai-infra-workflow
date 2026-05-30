@@ -93,6 +93,29 @@ pgrep -af 'xllm|vllm|sglang|python|evalscope|msprof' | tee "$RUN_ROOT/env/proces
 
 Qwen35-27B TP=4 MTP=3 复用 `causal_conv1d` 验证前，目标逻辑卡 0-3 的服务空闲态 `AICore=0%`，但 HBM 仍在 76%-77%，且 `npu-smi info` 进程表中存在多个 `ps` 查不到的历史 PID。该状态只能说明服务当前未计算，不能证明环境干净；在这种环境下得到的 evalscope TPOT 不能作为 PR #1536 的最终性能证据。正确流程是先记录门禁结果，清理残留 context 或换用干净卡，再重启服务进行同参数 A/B 测试。
 
+### MTP 启用门禁与 evalscope 指标陷阱
+
+Qwen3.5 官方 checkpoint 内置原生 MTP 权重，但 xLLM serving 前必须先导出为独立 draft model。不要只看模型目录里有 `mtp.*` 权重，也不要只传 `--num_speculative_tokens`。
+
+```bash
+python3 tools/export_mtp.py \
+  --input-dir /home/data/weights/Qwen35-27B \
+  --output-dir /home/data/weights/Qwen35-27B-mtp \
+  --model-type qwen3_5
+```
+
+导出后至少确认：
+- draft 目录存在 `mtp_layer_parameters.safetensors`。
+- draft config 的 `model_type` 为 `qwen3_5_mtp`。
+- 启动参数同时包含 `--draft_model /home/data/weights/Qwen35-27B-mtp`、`--draft_devices="npu:<rank>"` 和 `--num_speculative_tokens N`。
+- rank 日志出现 `draft_model_path: ...Qwen35-27B-mtp`、`Using draft devices: npu:<rank>`、`Speculative decode is enabled, algorithm: MTP`。缺少这些证据时，不能把该 run 记为外置 MTP draft run。
+
+踩坑记录：
+- 当前 xLLM 的外置 MTP draft 路径依赖 `draft_model_path`。`--num_speculative_tokens=3` 单独存在时，scheduler 可能按 speculative token budget 变化，但不会证明已经进入 `SpeculativeEngine` / `MTPWorkerImpl` 的 draft model 推理。
+- evalscope 的 `Decoded Tok/Iter` 和 `Spec Accept Rate` 来自流式 chunk 数推导，近似公式是 `L=(completion_tokens-1)/(chunks-1)`、`p=1-1/L`，不是 xLLM 服务端真实 accepted token counter。
+- 如果服务端把多个 token 聚合到一个 streaming chunk，evalscope 可能在没有外置 draft model 的情况下也显示 `Decoded Tok/Iter > 1` 和看似正常的接受率。对 `MTP=3`，若 `Decoded Tok/Iter` 明显超过 `num_speculative_tokens+1`，应优先怀疑 chunk 聚合或指标假象。
+- 因此 MTP benchmark 报告必须把 evalscope 性能表、rank 启动日志和必要的 profiling 证据一起保存；evalscope 接受率只能作为弱 sanity signal，不能单独作为 MTP 已启用或精度稳定的证据。
+
 ## 实测案例 (Qwen3.5-27B, 910B3 x4 TP=4, random 20k/1k, 2026-05-24)
 
 **环境**: xLLM `/home/g00510989/xllm/xllm`, commit `f514ad94 回退tilelang`  

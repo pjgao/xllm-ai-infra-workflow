@@ -322,7 +322,16 @@ VLLM_WORKER_MULTIPROC_METHOD=spawn vllm serve /models/Qwen3.5-27B \
 
 ### 4.6 MTP (Multi-Token Prediction) 模式
 
-Qwen3.5-27B 内置 MTP 架构 (1 层 draft model)，启用命令：
+Qwen3.5-27B 内置 MTP 架构 (1 层 draft model)，但 xLLM serving 前必须先把 checkpoint 中的原生 MTP 权重导出为独立 draft model：
+
+```bash
+python3 tools/export_mtp.py \
+  --input-dir /home/data/weights/Qwen35-27B \
+  --output-dir /home/data/weights/Qwen35-27B-mtp \
+  --model-type qwen3_5
+```
+
+导出后检查 draft 目录存在 `mtp_layer_parameters.safetensors`，且 config 中 `model_type` 为 `qwen3_5_mtp`。随后启用命令：
 
 ```bash
 ./scripts/mtp.sh start     # 启动 MTP 服务 (port 18170)
@@ -337,6 +346,10 @@ Qwen3.5-27B 内置 MTP 架构 (1 层 draft model)，启用命令：
 - `--draft_devices npu:N` — 每个节点的 draft device 必须匹配主 device
 - `--num_speculative_tokens 1` — **推荐值** (实测最优，详见下方)
 - `--max_concurrent_requests 30`
+
+**启用证据**:
+- rank 日志必须出现 `draft_model_path: ...Qwen35-27B-mtp`、`Using draft devices: npu:N`、`Speculative decode is enabled, algorithm: MTP`。
+- 只有 `--num_speculative_tokens` 或 evalscope 的 `Spec Accept Rate` 不足以证明外置 MTP draft 已启用；evalscope 接受率由 streaming chunk 数推导，chunk 聚合时可能出现假阳性。
 
 #### 实测性能对比 (2026-05-23, xLLM 82a407db, 同代码对比)
 
