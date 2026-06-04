@@ -65,7 +65,8 @@ xllm serve /models/Qwen3-235B-A22B \
 - 缓存 `conv_weight.transpose().contiguous()` 为成员变量
 - `run_spec_verify_conv` 改为收发 `[B,T,C]` 格式，消除 round-trip transpose
 - msprof 验证：Transpose kernel 从 14,400→960 calls（-93.3%），节省 190.8ms device time
-- 补丁：`patches/qwen3_gated_delta_net_base.{cpp,h}`
+- 代码证据：以 xLLM 对应 PR/commit 为准；仓库内仅保留
+  `docs/pr-1536-mtp-transpose-elimination.md` 和 `qwen35-mtp.md` 的案例说明。
 
 ## 已知优化
 

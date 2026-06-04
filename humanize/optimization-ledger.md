@@ -33,7 +33,7 @@
   - TTFT: 3953→3553 ms (-10.1%)
   - Transpose device time: 211.9→21.1 ms (-190.8 ms)
 - 文档参考：commit `38b4eb6`，Section 9 of `skills/xllm-npu-profiler/references/qwen35-27b-kernel-profile.md`
-- 补丁归档：`patches/qwen3_gated_delta_net_base.{cpp,h}`
+- 代码证据：以 xLLM 对应 PR/commit 为准；本仓库保留案例说明，不再保存整文件快照
 
 ## Qwen3.5-27B（2026-05-25，910B3 A3，TP=4，20k/1k random）
 

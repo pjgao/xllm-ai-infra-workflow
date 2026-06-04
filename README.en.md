@@ -231,7 +231,7 @@ docs/                           design docs, case studies, roadmap
 humanize/                       optimization ledgers and lineage
 model-pr-optimization-history/   model PR history knowledge base
 kernel-pilot/                   NPU kernel experiment helper
-patches/                        reusable patches and example code
+patches/                        minimal patches or migration notes, no full-file snapshots
 ```
 
 ## Environment

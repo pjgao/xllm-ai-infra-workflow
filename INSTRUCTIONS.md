@@ -67,7 +67,8 @@ frameworks/
 
 每个框架目录保存 launch template、help snapshot、metrics endpoint、
 profiling 采集说明、source map 和 known pitfalls。现有 xLLM 经验仍保留在
-docs、humanize、patches 和 model-pr-optimization-history 中，不做删除。
+docs、humanize 和 model-pr-optimization-history 中。`patches/` 只保留最小
+diff 或迁移说明，不保存整文件源码快照。
 
 ## 实测环境
 

@@ -226,5 +226,5 @@
 
 ### 9.4 补丁文件
 
-- `patches/qwen3_gated_delta_net_base.cpp`
-- `patches/qwen3_gated_delta_net_base.h`
+- `docs/pr-1536-mtp-transpose-elimination.md`
+- `model-pr-optimization-history/xllm/qwen35-mtp.md`

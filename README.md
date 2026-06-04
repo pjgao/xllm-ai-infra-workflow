@@ -223,7 +223,7 @@ docs/                           设计文档、case study、路线图
 humanize/                       优化账本和 lineage
 model-pr-optimization-history/   模型 PR 历史知识库
 kernel-pilot/                   NPU kernel 试验辅助
-patches/                        可复用补丁和案例代码
+patches/                        最小 patch 或历史迁移说明，不保存整文件快照
 ```
 
 ## 环境
