@@ -12,14 +12,14 @@
 
 | Metric | Parallel=1 | Parallel=5 |
 |---|---|---|
-| Output Throughput (tok/s) | 74.62 | - |
-| Total Throughput (tok/s) | 803.35 | - |
-| TTFT (ms) | 2414 | - |
-| TPOT (ms) | 12.0 | - |
-| ITL (ms) | 38.18 | - |
+| Output Throughput (tok/s) | 66.56 | - |
+| Total Throughput (tok/s) | 1366.82 | - |
+| TTFT (ms) | 2397.49 | - |
+| TPOT (ms) | 12.33 | - |
+| ITL (ms) | 36.82 | - |
 | Avg Output Tokens | 1024.0 | - |
 | Decoded Tok/Iter | 3.17 | - |
-| Spec. Accept Rate | 0.685 | - |
+| Spec. Accept Rate | 0.67 | - |
 
 #### Accuracy (ceval full)
 
