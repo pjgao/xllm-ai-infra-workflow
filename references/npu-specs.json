@@ -1,0 +1,13 @@
+{
+  "ascend_910b3_a3": {
+    "name": "Huawei Ascend 910B3 / A3",
+    "notes": "Fill exact peak values from the target environment or vendor documentation before using MFU for formal conclusions.",
+    "peak_flops": {
+      "bf16": null,
+      "fp16": null,
+      "int8": null
+    },
+    "memory_bandwidth_bytes_per_sec": null,
+    "hbm_bytes": null
+  }
+}

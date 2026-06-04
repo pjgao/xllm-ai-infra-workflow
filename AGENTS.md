@@ -31,6 +31,9 @@ xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 | xllm-npu-eval-runner | `skills/xllm-npu-eval-runner/SKILL.md` | 需要启动/复用 xLLM 服务并执行 evalscope 性能或精度评测时 |
 | xllm-npu-benchmark | `skills/xllm-npu-benchmark/SKILL.md` | 需要对比 xLLM / vLLM-Ascend / SGLang NPU 性能时 |
 | xllm-npu-profiler | `skills/xllm-npu-profiler/SKILL.md` | 需要定位 NPU 性能瓶颈、生成五表报告时 |
+| xllm-npu-pipeline-analysis | `skills/xllm-npu-pipeline-analysis/SKILL.md` | 需要分析 prefill/decode 边界、layer、rank skew 或 decode 空泡时 |
+| xllm-npu-capacity-planner | `skills/xllm-npu-capacity-planner/SKILL.md` | 需要解释 HBM、KV cache、MTP reserve、并发容量或 OOM 风险时 |
+| xllm-npu-compute-simulation | `skills/xllm-npu-compute-simulation/SKILL.md` | 需要估算 FLOPs/MFU、理论下界或 TP/MTP what-if 时 |
 | xllm-npu-sota-loop | `skills/xllm-npu-sota-loop/SKILL.md` | 端到端驱动 NPU SOTA 优化闭环、判断优化是否达标时 |
 | xllm-npu-code-review | `skills/xllm-npu-code-review/SKILL.md` | 提交 NPU 特化代码前必须审查的 7 个维度 |
 | xllm-npu-incident-triage | `skills/xllm-npu-incident-triage/SKILL.md` | xLLM 在 A3 上出现 crash / hang / OOM / 异常结果时 |
@@ -89,6 +92,8 @@ Phase 5     RLCR 迭代（xllm-npu-sota-loop）
 - `references/perf-artifact-schema.md`：性能评测产物目录和 `metrics.json` 字段。
 - `references/accuracy-artifact-schema.md`：精度评测产物目录、验证等级和 score 字段。
 - `references/profiling-artifact-schema.md`：profiling 采集产物、timeline notes 和 inconclusive 判定。
+- `references/npu-specs.json`：NPU compute simulation 的硬件规格占位。
+- `references/model-config-index.json`：常见模型 config 索引占位，正式估算前必须补齐。
 
 ## 常用脚本
 

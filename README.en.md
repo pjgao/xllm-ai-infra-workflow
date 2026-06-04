@@ -48,6 +48,12 @@ Analysis
     Fair benchmark comparison, warmup, environment gates, baseline/current diff.
   xllm-npu-profiler
     Ascend msprof collection, five-table reports, hostbound and timeline analysis.
+  xllm-npu-pipeline-analysis
+    Prefill/decode boundaries, layer timing, rank skew, and decode bubbles.
+  xllm-npu-capacity-planner
+    HBM, KV cache, MTP reserve, block capacity, and concurrency planning.
+  xllm-npu-compute-simulation
+    FLOPs, MFU, theoretical lower bounds, and TP/MTP what-if estimates.
   xllm-npu-accuracy-debug
     Minimal reproduction, A/B, bad cases, and commit bisect for accuracy issues.
   xllm-npu-incident-triage
@@ -139,6 +145,9 @@ Research -> Learn -> Code -> Review -> Validate -> Record
 | [`xllm-npu-eval-runner`](skills/xllm-npu-eval-runner/SKILL.md) | Start/reuse xLLM and run perf or accuracy evaluations | `runs/eval`, `runs/perf`, `runs/accuracy` |
 | [`xllm-npu-benchmark`](skills/xllm-npu-benchmark/SKILL.md) | Compare xLLM / vLLM-Ascend / SGLang NPU performance | `summary.md`, `candidates.jsonl`, `winning-commands.md` |
 | [`xllm-npu-profiler`](skills/xllm-npu-profiler/SKILL.md) | Explain TTFT/TPOT/TPS bottlenecks | five-table report, timeline notes, optimization candidates |
+| [`xllm-npu-pipeline-analysis`](skills/xllm-npu-pipeline-analysis/SKILL.md) | Analyze prefill/decode, layer timing, rank skew, and decode bubbles | stage table, rank skew table, bubble table |
+| [`xllm-npu-capacity-planner`](skills/xllm-npu-capacity-planner/SKILL.md) | Explain HBM/KV cache capacity, concurrency, and OOM risk | capacity table, capacity.json, report.md |
+| [`xllm-npu-compute-simulation`](skills/xllm-npu-compute-simulation/SKILL.md) | Estimate FLOPs/MFU and hardware lower bounds | compute estimate, MFU table, what-if |
 | [`xllm-npu-accuracy-debug`](skills/xllm-npu-accuracy-debug/SKILL.md) | Debug garbled outputs, CEval drops, GPU/NPU mismatch | bad cases, A/B table, bisect notes |
 | [`xllm-npu-incident-triage`](skills/xllm-npu-incident-triage/SKILL.md) | Triage crash, OOM, HCCL, graph, PagedAttention incidents | incident bundle, replay report |
 | [`xllm-npu-code-review`](skills/xllm-npu-code-review/SKILL.md) | Review NPU-related changes before PR submission | prioritized review findings |
@@ -217,6 +226,7 @@ instead.
 ```text
 skills/                         core agent skills
 references/                     global artifact schemas and code style
+tests/                          repository hygiene and schema smoke tests
 docs/                           design docs, case studies, roadmap
 humanize/                       optimization ledgers and lineage
 model-pr-optimization-history/   model PR history knowledge base

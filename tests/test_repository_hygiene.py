@@ -1,0 +1,50 @@
+from pathlib import Path
+import re
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def text_files():
+    suffixes = {".md", ".py", ".sh", ".json", ".jsonl", ".yaml", ".yml"}
+    for path in ROOT.rglob("*"):
+        if ".git" in path.parts:
+            continue
+        if path.is_file() and path.suffix in suffixes:
+            yield path
+
+
+def test_skill_frontmatter_has_name_and_description():
+    for skill in ROOT.glob("skills/*/SKILL.md"):
+        text = skill.read_text(encoding="utf-8")
+        assert text.startswith("---\n"), skill
+        header = text.split("---", 2)[1]
+        assert re.search(r"^name:\s*\S+", header, re.M), skill
+        assert re.search(r"^description:\s*.+", header, re.M), skill
+
+
+def test_no_public_readme_forbidden_source_reference():
+    forbidden = [
+        "B" + "Buf",
+        "AI-Infra-" + "Auto-" + "Driven-SKILLS",
+        "Auto-" + "Driven",
+    ]
+    for path in [ROOT / "README.md", ROOT / "README.en.md"]:
+        text = path.read_text(encoding="utf-8")
+        for item in forbidden:
+            assert item not in text, f"{item} found in {path}"
+
+
+def test_no_obvious_local_or_credential_strings():
+    patterns = [
+        "/home/" + "g00510989",
+        "/home/" + "gao" + "pengju",
+        r"192\.168\.",
+        "xllm" + "-gpj",
+        "jd" + "_openai_20k",
+        "BEGIN " + "RSA",
+        "PRIVATE " + "KEY",
+    ]
+    combined = "\n".join(p.read_text(encoding="utf-8", errors="ignore") for p in text_files())
+    for pattern in patterns:
+        assert not re.search(pattern, combined), pattern

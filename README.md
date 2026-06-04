@@ -45,6 +45,12 @@ Analysis 分析层
     公平基准测试、warmup、环境门禁、baseline/current 对比。
   xllm-npu-profiler
     昇腾 msprof 采集、五表报告、hostbound/timeline 分析。
+  xllm-npu-pipeline-analysis
+    prefill/decode 边界、layer timing、rank skew 和 decode 空泡分析。
+  xllm-npu-capacity-planner
+    HBM、KV cache、MTP reserve、block capacity 和并发容量解释。
+  xllm-npu-compute-simulation
+    FLOPs、MFU、kernel 理论下界和 TP/MTP what-if 估算。
   xllm-npu-accuracy-debug
     精度异常最小复现、A/B、坏例分析、commit 二分。
   xllm-npu-incident-triage
@@ -132,6 +138,9 @@ Research → Learn → Code → Review → Validate → Record
 | [`xllm-npu-eval-runner`](skills/xllm-npu-eval-runner/SKILL.md) | 启动/复用 xLLM 服务并执行性能或精度评测 | `runs/eval`、`runs/perf`、`runs/accuracy` |
 | [`xllm-npu-benchmark`](skills/xllm-npu-benchmark/SKILL.md) | 比较 xLLM / vLLM-Ascend / SGLang NPU 性能 | `summary.md`、`candidates.jsonl`、`winning-commands.md` |
 | [`xllm-npu-profiler`](skills/xllm-npu-profiler/SKILL.md) | 定位 TTFT/TPOT/TPS 瓶颈 | 五表报告、timeline notes、optimization candidates |
+| [`xllm-npu-pipeline-analysis`](skills/xllm-npu-pipeline-analysis/SKILL.md) | 分析 prefill/decode、layer、rank skew 和 decode 空泡 | stage table、rank skew table、bubble table |
+| [`xllm-npu-capacity-planner`](skills/xllm-npu-capacity-planner/SKILL.md) | 解释 HBM/KV cache/并发容量和 OOM 风险 | capacity table、capacity.json、report.md |
+| [`xllm-npu-compute-simulation`](skills/xllm-npu-compute-simulation/SKILL.md) | 估算 FLOPs/MFU 和硬件理论下界 | compute estimate、MFU table、what-if |
 | [`xllm-npu-accuracy-debug`](skills/xllm-npu-accuracy-debug/SKILL.md) | 输出乱码、CEval 掉分、GPU/NPU 不一致 | bad cases、A/B 表、bisect notes |
 | [`xllm-npu-incident-triage`](skills/xllm-npu-incident-triage/SKILL.md) | crash、OOM、HCCL、graph、PagedAttention 事故 | incident bundle、replay report |
 | [`xllm-npu-code-review`](skills/xllm-npu-code-review/SKILL.md) | 提交 NPU 相关代码前审查 | 分级 review findings |
@@ -209,6 +218,7 @@ ln -sfn "$(pwd)/model-pr-optimization-history" "$CODEX_HOME/skills/model-pr-opti
 ```text
 skills/                         核心 Agent skills
 references/                     全局 artifact schema 和代码风格
+tests/                          仓库卫生和 schema 最小测试
 docs/                           设计文档、case study、路线图
 humanize/                       优化账本和 lineage
 model-pr-optimization-history/   模型 PR 历史知识库
