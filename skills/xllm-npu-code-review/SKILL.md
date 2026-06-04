@@ -75,6 +75,9 @@ git diff $MERGE_BASE..HEAD
 - 如果热点或改动只出现在 MTP/spec-verify 路径，先与非 MTP decode 做路径级 diff，不要直接修局部 `transpose`/`contiguous`。
 - Qwen3.5 GatedDeltaNet 已知模式：非 MTP decode 使用 `causal_conv1d` 并复用 weight 预 reshape/预布局；MTP spec-verify 若使用 `causal_conv1d_update` 并手工构造 params，容易重新引入 input/state/weight layout 适配和 transpose。
 - review 时看到 `run_spec_verify_conv()`、`CausalConv1dUpdateParams`、`conv_weight.transpose(0,1).contiguous()`、`mixed_qkv.transpose(1,2)`，必须追问为什么不能复用非 MTP 的 `causal_conv1d` 路径或等价 fused spec-verify causal conv。
+- Qwen3.5 MTP graph 正确性门禁：`linear_state_indices`/cache row、`q_cu_seq_lens`、`num_accepted_tokens` 这类 replay 会变化的参数不能落成 host vector / `IntArrayRef`；ACL graph capture 会固化 host 属性，导致 replay 使用 stale conv cache 行或 stale accepted token 数。
+- 不要把 `aclnnCausalConv1dTensorGetWorkspaceSize` 当成天然正确的修复。该 tensor workspace 路径曾在合法的 Qwen3.5 MTP spec decode shape 上 graph on/off 都段错误；只有同时通过 graph on/off smoke 和多并发 cache 验证后，才能批准使用。
+- 如果为了正确性使用 `causal_conv1d_update_v2`，必须检查 `conv_state` layout：wrapper 期望 `[slot, dim, state_len]`，Qwen3.5 cache 是 `[slot, state_len, dim]`，通常需要传 `conv_cache.transpose(1, 2)` 并验证 copy-back 确实更新原始 cache。
 - PR 结论要标明这是“局部减损”还是“结构性修复”；只减少 transpose 调用不等于已经修复根因。
 
 **语义保持**（Triton → TileLang 转换时）：

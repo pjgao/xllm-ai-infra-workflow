@@ -331,8 +331,9 @@ MTP transpose 专项强制检查：
 2026-05-27 复用路径 prototype 经验：
 - 该 prototype 不是 PR #1536 已合入内容；引用时必须标注为后续方案。
 - 优先复用非 MTP decode 的 `causal_conv1d`，而不是继续局部修补 `causal_conv1d_update` 的 transpose。实现上让 MTP spec-verify 输入/输出保持 `[B,T,C]`，直接使用 `load_common_state_dict()` 中已经预布局的 conv weight。
-- `aclnnCausalConv1d` 的 `query_start_loc/cache_indices/num_accepted_tokens` 是 host `IntArrayRef`，因此 MTP accepted-prefix 需要在 `ModelInputParams` 中保留 host vector；ACL graph capture params 也要同步做 padding。
-- 重要风险：host `IntArrayRef` 在 ACL graph replay 中可能被固化为 capture 属性，而旧 `causal_conv1d_update` 的 accepted-prefix 是 device tensor，可以 replay 动态更新。graph on/off 必须分别做 10 条精度验证；如果 graph replay 下 accepted-prefix 不能动态变化，应改为 fused/tensor 参数算子或保守 fallback。
+- `aclnnCausalConv1d` 同时存在 host `IntArrayRef` workspace API 和 tensor workspace API。MTP spec verify 复用该算子时，不能把 replay 会变化的 `cache_indices/num_accepted_tokens` 转成 host vector；否则 ACL graph capture 会固化旧值。
+- 重要风险：`query_start_loc` 在同一 graph shape 下通常是静态 padding 序列，但 `cache_indices` 绑定真实 linear state slot，`num_accepted_tokens` 绑定每步 accepted prefix，二者必须走 tensor 输入并由 graph persistent buffer replay 更新。graph on/off、parallel>1、多 batch size 变化都必须做 10 条以上精度验证。
+- 如果只把 `num_accepted_tokens` 改回 tensor，但 `cache_indices` 仍是 host `IntArrayRef`，并发/多请求下仍可能读写错误 conv cache 行，表现为输出重复、乱码标点、长尾反复 `answer:D` 等精度异常。
 - 构建经验：`python setup.py build` 先做 submodule commit 校验；如果 `third_party/tilelang-ascend` 或 `third_party/torch_npu_ops` checkout 与主仓记录不一致，会在编译前失败。直接 Ninja 重链可能暴露 `ops_api.cpp` 与 `torch_npu_ops` 接口不匹配，不能用这种状态做性能结论。
 
 构建补充：当前 CANN op_api 的 `aclnnBeamSearchGroupGetWorkspaceSize()` 多了 `topK` 参数，需在 `beam_search_rec.cpp` 传 `top_tokens.size(-1)` 才能完整链接。

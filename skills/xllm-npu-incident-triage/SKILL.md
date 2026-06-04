@@ -118,6 +118,7 @@ export ASCEND_ENABLE_DUMP=1
 常见原因：
 - 新增算子未融合
 - 图模式 fallback（某个 shape 不支持 compilation）
+- 小范围 xLLM C++ 修改如果触发 Ninja 重编数百个目标，先按对象级目标验证具体改动，并记录为构建缓存/依赖 churn；不要直接判断为源码修复失败。示例：优先编译 `qwen3_gated_delta_net_base.cpp.o`、`acl_graph_executor_impl.cpp.o`、`mtp_worker_impl.cpp.o`，确认对象通过后再做完整 `python setup.py build` 或目标二进制构建。
 - KV Cache 碎片率增加
 - 调度参数回归
 
