@@ -41,7 +41,7 @@
 - 收益：Output TPS 66.82→69.31 (+3.7%)，TPOT 12.05→11.57 ms (-4.0%)
 - 方法：恢复 MTP spec-verify Transpose 消除逻辑；为当前 CANN op_api 补 `beam_search_rec` 的 `topK` 参数以完成构建。
 - 证据：
-  - Benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/benchmark/random_20k_1k_parallel_1_number_5/evalscope.log`
+  - Benchmark: `<workspace>/runs/20260525_mtp3_transpose_opt/benchmark/random_20k_1k_parallel_1_number_5/evalscope.log`
   - Profiling: `Transpose` 505.08 ms / 36,701 calls → 205.86 ms / 12,604 calls
   - Accuracy: GSM8K `limit=10`, `mean_acc=1.0`
 - 结论：在当前 TP=4 + MTP=3 + chunk prefill 的长输入场景，Transpose 消除仍然有效，但剩余瓶颈已转向 MatMul、AllReduce/AllGather 和 MTP accept/verify 小算子。
@@ -62,7 +62,7 @@
   - target validation 返回后，只为实际 accept 的 `last_idx` 构造 2-token draft extend 输入并下发 draft model。
 - 反例边界：P0 初版枚举所有可能 `last_idx` 候选，Output TPS 65.75、TPOT 12.46 ms，明显负优化。结论是不能用“枚举未来候选”换重叠，应只提前不依赖 target 输出且成本确定的小准备。
 - 证据：
-  - P0 negative benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_async_draft_p0/perf/random20k_1k_p1_n5/20260525_071955/Qwen35-27B/performance_summary.txt`
-  - P0b benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_async_draft_p0b/perf/random20k_1k_p1_n5/20260525_072650/Qwen35-27B/performance_summary.txt`
-  - Accuracy: GSM8K `limit=10`, `mean_acc=1.0`，`/home/g00510989/xllm/runs/20260525_mtp3_async_draft_p0b/accuracy/gsm8k_limit10/reports/Qwen35-27B/gsm8k.json`
+  - P0 negative benchmark: `<workspace>/runs/20260525_mtp3_async_draft_p0/perf/random20k_1k_p1_n5/20260525_071955/Qwen35-27B/performance_summary.txt`
+  - P0b benchmark: `<workspace>/runs/20260525_mtp3_async_draft_p0b/perf/random20k_1k_p1_n5/20260525_072650/Qwen35-27B/performance_summary.txt`
+  - Accuracy: GSM8K `limit=10`, `mean_acc=1.0`，`<workspace>/runs/20260525_mtp3_async_draft_p0b/accuracy/gsm8k_limit10/reports/Qwen35-27B/gsm8k.json`
 - 后续方向：真正的 vLLM-style async draft 下发需要引入 shadow/pending draft state 或双缓冲 KV，确保 target validate 与下一轮 draft prefill/extend 可并行且 commit/rollback 精确；P0b 只是低风险第一步。

@@ -20,7 +20,7 @@ description: 查询 xLLM 历史 PR 中的优化信息，辅助当前模型的优
 使用 `scripts/query.py` 查询 xLLM 仓库的 PR：
 
 ```bash
-cd /home/gaopengju/projects/xllm
+cd <xllm-repo>
 
 # 按模型查询
 python ../xllm-npu-optimization-skills/model-pr-optimization-history/scripts/query.py \

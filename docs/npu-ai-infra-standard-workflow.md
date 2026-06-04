@@ -7,7 +7,7 @@
 
 ## 1. 仓库通用定位
 
-本仓库是一套 **NPU AI Infra Auto-Driven SKILLS**：面向华为昇腾 NPU
+本仓库是一套 **NPU AI Infra Evidence-Driven Skills**：面向华为昇腾 NPU
 上的大模型推理框架，帮助 Agent 和工程师完成 benchmark、profiling、
 capacity planning、incident triage、code review、kernel pilot、PR
 history 查询和 SOTA loop。

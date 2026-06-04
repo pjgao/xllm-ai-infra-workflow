@@ -60,11 +60,11 @@ Phase 5     RLCR 迭代（xllm-npu-sota-loop）
 
 ## 关键路径
 
-- xLLM 本地仓库：`/home/gaopengju/projects/xllm`
-- vLLM-Ascend 本地仓库：`/home/gaopengju/projects/vllm-ascend`
+- xLLM 本地仓库：`<xllm-repo>`
+- vLLM-Ascend 本地仓库：`<vllm-ascend-repo>`
 - SGLang NPU 本地仓库：按实际机器记录到 `$RUN_ROOT/manifest.md`
 - 模型权重目录：`/models/`（如 `/models/Qwen3.5-27B`）
-- 每次 SOTA run 输出目录：`/home/gaopengju/runs/<date>_<model>_npu_sota/`
+- 每次 SOTA run 输出目录：`<run-root>/<date>_<model>_npu_sota/`
 
 ## 启动新模型优化前必做
 
@@ -74,7 +74,7 @@ Phase 5     RLCR 迭代（xllm-npu-sota-loop）
 
 ## 运行产物约定
 
-参考 `/home/g00510989/xllm_whj/ai-infra-development` 的多框架工作台经验，新任务尽量按任务类型拆分产物：
+参考 `<ai-infra-workbench>` 的多框架工作台经验，新任务尽量按任务类型拆分产物：
 
 - `runs/build/<run_id>/`：编译命令、submodule 状态、build log、server binary 校验。
 - `runs/deploy/<run_id>/`：启动命令、`npu-smi` 快照、可见卡、PID、服务日志、healthcheck、smoke。
@@ -108,7 +108,7 @@ python skills/xllm-npu-benchmark/scripts/compare_npu_benchmark.py \
 # Profiling 分析
 export PROFILING_MODE=dynamic
 ps -ef | grep xllm
-MODEL=Qwen35-27B TOKENIZER=/home/data/weights/Qwen35-27B PORT=8080 \
+MODEL=Qwen35-27B TOKENIZER=<model-root>/Qwen35-27B PORT=8080 \
   skills/xllm-npu-profiler/scripts/run_profiling.sh <xllm_parent_pid> profiles/xllm full
 
 python skills/xllm-npu-profiler/scripts/analyze_xllm_npu_profile.py \

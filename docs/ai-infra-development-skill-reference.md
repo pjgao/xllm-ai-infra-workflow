@@ -1,6 +1,6 @@
 # ai-infra-development Skill 参考分析
 
-> 来源：`/home/g00510989/xllm_whj/ai-infra-development`
+> 来源：`<ai-infra-workbench>`
 > 分析日期：2026-06-04
 
 ## 结论

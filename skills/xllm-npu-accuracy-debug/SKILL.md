@@ -80,49 +80,8 @@ env | grep -E "ASCEND|CANN|NPU|HCCL|ATB|PYTORCH_NPU"
 3. L3：选最可能暴露问题的 task 前 N 条，例如 CEval `operating_system`、`computer_architecture`，或 GSM8K 前 10 条。
 4. L4/L5：只有当 L3 显示差异或需要最终验收时再跑。
 
-CEval 两个子集建议用 Python 拼 JSON，避免 shell 转义 `}}}` 出错：
-
-```bash
-python3 - <<'PY'
-import json
-import os
-import subprocess
-
-work = "/path/to/artifacts/ceval_ab"
-dataset_args = {
-    "ceval": {
-        "subset_list": ["operating_system", "computer_architecture"],
-        "filters": {"remove_until": "}}}"}
-    }
-}
-gen = {
-    "max_tokens": 30000,
-    "temperature": 0.6,
-    "top_p": 0.95,
-    "top_k": 20,
-    "extra_body": {"chat_template_kwargs": {"enable_thinking": True}},
-    "stream": True,
-    "timeout": 60000,
-}
-cmd = [
-    "python3", "-m", "evalscope.cli.cli", "eval",
-    "--model", "Qwen35-27B",
-    "--eval-type", "openai_api",
-    "--api-url", "http://127.0.0.1:PORT/v1/chat/completions",
-    "--datasets", "ceval",
-    "--dataset-args", json.dumps(dataset_args, ensure_ascii=False),
-    "--limit", "10",
-    "--generation-config", json.dumps(gen),
-    "--no-timestamp",
-    "--work-dir", work,
-]
-env = os.environ.copy()
-env["PYTHONPATH"] = "/path/to/evalscope"
-raise SystemExit(subprocess.run(cmd, env=env).returncode)
-PY
-```
-
-`--limit 10` 对每个 subset 生效，所以两个 subset 共 20 条。
+CEval 两个子集和二分脚本模板见
+[`references/accuracy-debug-runbook.md`](references/accuracy-debug-runbook.md)。
 
 ### Step 3: 日志和代码逻辑分析
 
@@ -213,49 +172,8 @@ PY
 - 能定义 `good` 和 `bad` commit。
 - 验证脚本返回码能表达 pass/fail。
 
-手工二分：
-
-```bash
-git bisect start
-git bisect bad BAD_COMMIT
-git bisect good GOOD_COMMIT
-
-# 每轮：
-# 1. 编译当前 commit
-# 2. 启动服务
-# 3. 跑最小复现
-# 4. 根据结果标记
-git bisect good   # 没有精度问题
-git bisect bad    # 有精度问题
-
-git bisect reset
-```
-
-自动二分脚本建议分三段：
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-./scripts/build_xllm.sh
-./scripts/start_server.sh
-python3 ./scripts/run_accuracy_probe.py --case ceval_os_10
-./scripts/stop_server.sh
-```
-
-返回码约定：
-
-- `0`：pass，标记 good
-- `1`：fail，标记 bad
-- `125`：当前 commit 构建失败或环境不可用，git bisect skip
-
-运行：
-
-```bash
-git bisect start BAD_COMMIT GOOD_COMMIT
-git bisect run ./scripts/bisect_accuracy.sh
-git bisect reset
-```
+手工和自动二分模板见
+[`references/accuracy-debug-runbook.md`](references/accuracy-debug-runbook.md)。
 
 二分时要避免：
 
@@ -325,37 +243,8 @@ git bisect reset
 
 ## 真实案例：PR #1400 Qwen3-Next 权重变换竞态
 
-症状：
+这个案例说明：10 条普通 prompt 没问题，不代表没有精度回归；CEval 局部
+task 的前 N 条可以更快暴露权重加载竞态。
 
-- 10 条简单 prompt 无异常。
-- CEval `operating_system` + `computer_architecture` 前 10 条 A/B 出现差异。
-
-证据：
-
-| 版本 | operating_system | computer_architecture | overall |
-|------|------------------|-----------------------|---------|
-| 未修复 | 9/10 | 10/10 | 19/20 |
-| 修复后 | 10/10 | 10/10 | 20/20 |
-
-坏例：
-
-- subset：`operating_system`
-- index：8
-- target：`B`
-- 未修复：`答案：D`
-- 修复后：`答案：B`
-
-根因：
-
-- safetensors 多分片并发加载。
-- `Qwen3NextAttentionImpl::load_state_dict()` 中普通 bool 不能保护跨线程的权重就地变换。
-- qkv reorder 或 q/k norm `add_(1.0)` 有重复执行风险。
-
-修复：
-
-- 每层增加 `std::mutex` 串行化 `load_state_dict()`。
-- 使用 `!was_loaded && is_weight_loaded()` transition guard 替代独立 bool。
-
-参考：
-
-- `docs/pr-1400-qwen3-next-weight-transform-race.md`
+详细复盘见
+[`../../docs/pr-1400-qwen3-next-weight-transform-race.md`](../../docs/pr-1400-qwen3-next-weight-transform-race.md)。

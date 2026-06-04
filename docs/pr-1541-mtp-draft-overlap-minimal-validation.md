@@ -13,7 +13,7 @@
 
 本地验证分支：
 
-- 仓库：`/home/g00510989/xllm/xllm_pr1541_minimal`
+- 仓库：`<workspace>/xllm_pr1541_minimal`
 - 分支：`pr1541-minimal`
 - 提交：`eaff9517 perf: overlap mtp draft extend preparation`
 - 主要改动：`xllm/core/runtime/mtp_worker_impl.{cpp,h}`
@@ -115,8 +115,8 @@ ASCEND_RT_VISIBLE_DEVICES=8,9,10,11
 
 模型：
 
-- target：`/home/data/weights/Qwen35-27B`
-- draft：`/home/data/weights/Qwen35-27B-mtp`
+- target：`<model-root>/Qwen35-27B`
+- draft：`<model-root>/Qwen35-27B-mtp`
 
 短请求 smoke：通过。
 
@@ -134,7 +134,7 @@ ASCEND_RT_VISIBLE_DEVICES=8,9,10,11
 结果目录：
 
 ```text
-/home/g00510989/xllm/runs/20260525_pr1541_minimal_eaff9517/perf/random20k_1k_p1_n5/20260525_152615/Qwen35-27B
+<workspace>/runs/20260525_pr1541_minimal_eaff9517/perf/random20k_1k_p1_n5/20260525_152615/Qwen35-27B
 ```
 
 ### 精度 workload
@@ -142,13 +142,13 @@ ASCEND_RT_VISIBLE_DEVICES=8,9,10,11
 使用 GSM8K `limit=10`：
 
 ```text
-/home/g00510989/xllm/runs/20260525_pr1541_minimal_eaff9517/accuracy/gsm8k_limit10
+<workspace>/runs/20260525_pr1541_minimal_eaff9517/accuracy/gsm8k_limit10
 ```
 
 报告：
 
 ```text
-/home/g00510989/xllm/runs/20260525_pr1541_minimal_eaff9517/accuracy/gsm8k_limit10/reports/Qwen35-27B/gsm8k.json
+<workspace>/runs/20260525_pr1541_minimal_eaff9517/accuracy/gsm8k_limit10/reports/Qwen35-27B/gsm8k.json
 ```
 
 ## 验证结果
@@ -226,7 +226,7 @@ GSM8K 10 条数据未发现精度异常。
 本轮补跑了一个 decode-focused smoke，用于和历史 profiling 形态对齐：
 
 - Workload：random 32 input / 200 output，`parallel=1`，`number=1`
-- 结果目录：`/home/g00510989/xllm/runs/20260525_pr1541_minimal_eaff9517/profiling/mtp3_minimal_decode32_out200_cards8_11_20260525_161500/evalscope/20260525_161923/Qwen35-27B`
+- 结果目录：`<workspace>/runs/20260525_pr1541_minimal_eaff9517/profiling/mtp3_minimal_decode32_out200_cards8_11_20260525_161500/evalscope/20260525_161923/Qwen35-27B`
 
 | 版本 | Avg Latency | TTFT | TPOT | Output TPS | Decode TPS | Decoded/Iter | Accept |
 |------|-------------|------|------|------------|------------|--------------|--------|
@@ -272,12 +272,12 @@ msprof 动态采集尝试：
 本轮按 skill 中的 evalscope 路径重新验证 TP=4、chunk prefill、MTP=3：
 
 - 物理 NPU：12, 13, 14, 15
-- target：`/home/data/weights/Qwen35-27B`
-- draft：`/home/data/weights/Qwen35-27B-mtp`
+- target：`<model-root>/Qwen35-27B`
+- draft：`<model-root>/Qwen35-27B-mtp`
 - 关键参数：`--enable_chunked_prefill=true`、`--max_tokens_per_chunk_for_prefill=256`、`--enable_schedule_overlap=true`、`--enable_graph=true`、`--num_speculative_tokens 3`
-- 性能目录：`/home/g00510989/xllm/runs/20260528_evalscope_validation/perf/mtp3_random20k_1k_p1_n5/20260528_075302/Qwen35-27B`
-- 精度目录：`/home/g00510989/xllm/runs/20260528_evalscope_validation/accuracy/gsm8k_limit10_max2048_temp0`
-- no-MTP 对照精度目录：`/home/g00510989/xllm/runs/20260528_evalscope_validation/accuracy/no_mtp_gsm8k_limit10_max2048_temp0`
+- 性能目录：`<workspace>/runs/20260528_evalscope_validation/perf/mtp3_random20k_1k_p1_n5/20260528_075302/Qwen35-27B`
+- 精度目录：`<workspace>/runs/20260528_evalscope_validation/accuracy/gsm8k_limit10_max2048_temp0`
+- no-MTP 对照精度目录：`<workspace>/runs/20260528_evalscope_validation/accuracy/no_mtp_gsm8k_limit10_max2048_temp0`
 
 ### random 20k/1k 性能结果
 

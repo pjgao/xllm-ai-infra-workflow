@@ -4,6 +4,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 SMOKE_MODE="${SMOKE_MODE:-true}"
+TOKENIZER_PATH="${TOKENIZER_PATH:-/models/Qwen35-27B}"
 
 evalscope perf \
   --parallel 1 \
@@ -18,7 +19,7 @@ evalscope perf \
   --prefix-length 0 \
   --min-prompt-length 20000 \
   --max-prompt-length 20000 \
-  --tokenizer-path /home/data/weights/Qwen35-27B \
+  --tokenizer-path "$TOKENIZER_PATH" \
   --extra-args '{"ignore_eos": true}'
 
 if [ "$SMOKE_MODE" != "true" ]; then
@@ -34,6 +35,6 @@ if [ "$SMOKE_MODE" != "true" ]; then
     --prefix-length 0 \
     --min-prompt-length 20000 \
     --max-prompt-length 20000 \
-    --tokenizer-path /home/data/weights/Qwen35-27B \
+    --tokenizer-path "$TOKENIZER_PATH" \
     --extra-args '{"ignore_eos": true}'
 fi

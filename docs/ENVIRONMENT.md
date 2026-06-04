@@ -2,10 +2,10 @@
 
 ## 远程机器
 - **机器**: 154（具体 IP 见 SSH config 或 `.ssh/config`）
-- **容器名**: `xllm-gpj`
-- **代码目录**: `/home/g00510989/xllm/xllm`
-- **启动脚本**: `/home/g00510989/xllm/xllm.sh`
-- **历史中间数据**: `/home/gaopengju/runs/20260523_qwen35_27b_npu_sota/`
+- **容器名**: `<container-name>`
+- **代码目录**: `<workspace>/xllm`
+- **启动脚本**: `<workspace>/xllm.sh`
+- **历史中间数据**: `<run-root>/20260523_qwen35_27b_npu_sota/`
 
 ## 编译与运行
 - **编译命令**: `python setup.py build`（增量编译，生成二进制产物）
@@ -29,7 +29,7 @@ export https_proxy=http://127.0.0.1:6789
 - **PR**: https://github.com/jd-opensource/xllm/pull/1536
 - **目标分支**: `jd-opensource/xllm:preview/qwen3.5-qwen3.6`
 - **最新 commit**: `1d07999f`（含 layout contract 正确性修复）
-- **本地仓库**: `/home/gaopengju/projects/xllm`（branch: `feat/qwen35-mtp-transpose-elimination`）
+- **本地仓库**: `<xllm-repo>`（branch: `feat/qwen35-mtp-transpose-elimination`）
 
 ## 模型
 - **当前优化目标**: Qwen3.5-27B（MTP, nst=1）

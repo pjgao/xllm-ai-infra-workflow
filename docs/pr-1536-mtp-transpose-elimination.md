@@ -54,7 +54,7 @@ evalscope perf \
   --prefix-length 0 \
   --min-prompt-length 512 \
   --max-prompt-length 512 \
-  --tokenizer-path /home/data/weights/Qwen35-27B \
+  --tokenizer-path <model-root>/Qwen35-27B \
   --extra-args '{"ignore_eos": true}'
 ```
 
@@ -70,7 +70,7 @@ evalscope perf \
 
 基线代码来自官方最新 preview 分支：
 
-- Worktree: `/home/g00510989/xllm/xllm_preview_qwen35_baseline`
+- Worktree: `<workspace>/xllm_preview_qwen35_baseline`
 - Branch: `origin/preview/qwen3.5-qwen3.6`
 - Commit: `7cdaa866 bugfix: qwen3.5 resolve causal_conv1d tiling failure for concurrent decode requests. (#1585)`
 - Submodule: 已执行 `git submodule update --init --recursive --force`
@@ -100,7 +100,7 @@ evalscope perf \
 
 本地记录：
 
-- Run root: `/home/g00510989/xllm/runs/20260529_evalscope_512_1024_preview_qwen35_baseline_devices_12_15_retry`
+- Run root: `<workspace>/runs/20260529_evalscope_512_1024_preview_qwen35_baseline_devices_12_15_retry`
 - Evalscope log: `evalscope_512_1024_number10.log`
 - Server logs: `server_mtp3/rank*.log`
 - 环境记录: `npu_smi_before.txt`、`npu_smi_after.txt`、`process_before.txt`、`run_meta.txt`
@@ -109,7 +109,7 @@ evalscope perf \
 
 修改版本地 run：
 
-- Run root: `/home/g00510989/xllm/runs/20260529_evalscope_512_1024_reuse_conv_devices_12_15_retry`
+- Run root: `<workspace>/runs/20260529_evalscope_512_1024_reuse_conv_devices_12_15_retry`
 - 配置：同样 random 512 输入 / 1024 输出，parallel=1，number=10，MTP=3，chunk prefill 开启。
 
 | 指标 | Preview 最新基线 | 复用 causal_conv1d 修改版 | 变化 |

@@ -63,8 +63,8 @@ Before doing anything, use the Question tool to confirm these parameters with th
 Ask all parameters in one batch. Provide sensible defaults based on current script values:
 - API URL: `http://localhost:18050/v1`
 - Model Name: `Qwen35-27B`
-- Model Path: `/home/data/weights/Qwen35-27B`
-- Draft Model Path: `/home/data/weights/Qwen35-27B-mtp`
+- Model Path: `<model-root>/Qwen35-27B`
+- Draft Model Path: `<model-root>/Qwen35-27B-mtp`
 - xLLM Binary Path: `<project_root>/xllm/build/xllm/core/server/xllm`
 - TP: `4`
 - NPU Devices: `0,1,2,3`

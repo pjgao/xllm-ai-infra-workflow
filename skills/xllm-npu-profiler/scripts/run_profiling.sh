@@ -26,7 +26,7 @@ WARMUP_BATCHES=${WARMUP_BATCHES:-2}
 INPUT_TOKENS=${INPUT_TOKENS:-128}
 OUTPUT_TOKENS=${OUTPUT_TOKENS:-20}
 MODEL=${MODEL:-Qwen35-27B}
-TOKENIZER=${TOKENIZER:-/home/data/weights/Qwen35-27B}
+TOKENIZER=${TOKENIZER:-/models/Qwen35-27B}
 
 if [[ -z "$XLLM_PID" ]]; then
   echo "Usage: $0 <xllm_parent_pid> [output_dir_prefix] [warmup|test|full]"

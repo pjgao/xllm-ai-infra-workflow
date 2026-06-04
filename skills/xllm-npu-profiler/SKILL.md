@@ -289,141 +289,17 @@ python scripts/render_triage_npu.py \
 
 | 检查维度 | 健康值 | 异常信号 |
 |---------|-------|---------|
-| MTP 启用证据 | rank 日志同时有 `draft_model_path`、`Using draft devices`、`Speculative decode is enabled` | 只有 `--num_speculative_tokens` 或 evalscope accept rate，不能证明进了外置 draft |
-| draft 权重 | Qwen3.5 已用 `tools/export_mtp.py` 导出独立 `*-mtp` 目录 | 直接拿主模型目录当 draft，或没有 `mtp_layer_parameters.safetensors` |
-| `--num_speculative_tokens` | 依 workload 扫描；20k/1k random TP=4 当前为 `nst=3` | 只看 accept rate 选择更大 nst，可能被 draft/verify 开销反噬 |
-| Spec Accept Rate | nst=3 场景约 68-71%，但必须结合服务端日志判断 | evalscope 该指标由 streaming chunks 推导；单独出现不能证明 MTP 生效 |
-| Decoded Tok/Iter | nst=3 场景约 3.2-3.4，且不应明显超过 nst+1 | 明显低于上限且 TPOT 不降，需检查 draft/verify；明显超过上限多半是 chunk 聚合假象 |
-| reserved_linear_bytes | nst=3 约 4.54 GB | >6 GB 表明 draft+verification 内存压力大 |
-| KV Cache blocks | nst=3 约 3414 blocks | 长上下文或高并发下 blocks 下降会限制容量 |
-| Prefill warmup 时间 | ≤baseline | 2x baseline → draft prefill penalty 主导延迟 |
+| MTP 启用证据 | rank 日志同时有 `draft_model_path`、`Using draft devices`、`Speculative decode is enabled` | 只有 `--num_speculative_tokens` 或 evalscope accept rate |
+| draft 权重 | 已导出独立 `*-mtp` 目录 | 直接拿主模型目录当 draft |
+| `--num_speculative_tokens` | 依 workload 扫描 | 只看 accept rate 选择更大 nst |
+| Spec Accept Rate | 使用服务端 `/vars` delta 判断 | 只有 evalscope 推导值 |
+| Decoded Tok/Iter | 不明显超过 `nst + 1` | 明显超过上限且没有 chunk 聚合解释 |
+| Memory | reserved linear cache 和 KV blocks 有余量 | MTP 深度导致容量明显下降 |
 
-**关键结论 (Qwen3.5-27B @ 910B3)**:
-- 旧 TP=2 / 96 input / 100 output 场景：`nst=1` 最优，`nst=2` 为严重负优化。
-- 当前 TP=4 / random 20k input / 1k output / chunk prefill 场景：`nst=3` 最优；`nst=4/5` accept rate 更高但端到端吞吐下降。
-- MTP 主要改善 decode/TPOT；长 prompt 的 TTFT 仍由 prefill 主导，不应用 TTFT 单独判断 MTP 是否有效。
-- 对 MTP trace 做结论前，先保存启动日志并证明进入 `SpeculativeEngine` / `MTPWorkerImpl`。profiling 中应能看到 draft/validate 相关路径或 MTP 专属 kernel；如果只有 evalscope `Spec Accept Rate`，该 run 只能记为“疑似 speculative 指标”，不能作为 MTP 优化依据。
-
-### 2026-05-25 TP=4 / MTP=3 Profiling 记录
-
-环境：xLLM `f514ad94`，Qwen35-27B + Qwen35-27B-mtp，Phy 8-11，`--enable_chunked_prefill=true`，`--num_speculative_tokens 3`。
-
-Trace:
-- Prefill-focused: `/home/g00510989/xllm/runs/20260524_tp4_random20k_1k/profiling/mtp3_chunk_prefill20k_out1_cards8_11_20260525_000017/PROF_000001_20260525000020794_DBKJLBLHERRILEQB`
-- Decode-focused: `/home/g00510989/xllm/runs/20260524_tp4_random20k_1k/profiling/mtp3_chunk_decode32_out200_cards8_11_20260525_001223/PROF_000001_20260525001226480_GMAQBFHGBIOBQCIC`
-
-Decode-focused 五表要点：
-- Kernel: `MatMulV2` 36.3%, `allreduceAicpuKernel` 31.7%, `Transpose` 9.5%, `allgatherAicpuKernel` 2.4%, `fused_recurrent_gated_delta_rule_spec_fwd_kernel` 1.6%, `_causal_conv1d_update_kernel_npu_tiled_v2` 1.5%.
-- Communication: HCCL 统计中 `hcom_allReduce_` 64.1%, `hcom_allGather_` 35.9%；TP=4 decode 仍有明显通信优化空间。
-- Dispatch/Host: API 统计中 `aclrtSynchronizeStream` + `StreamSynchronize` 合计约 7.35s，`launch` 1.58s，`MemCopySync` 0.64s，小算子与同步开销非常重。
-- Fuse pattern: MTP accept/verify 小算子累计明显，`Transpose` 505ms/36,701 calls、`Pack` 64.8ms/18,792 calls、`Range` 51.6ms/6,126 calls、`SoftmaxV2` 46.9ms/634 calls、`ArgMaxV2` 36.7ms/760 calls。
-- Memory: rank0 日志 `reserved_linear_bytes=4.54 GB`、KV blocks=3414；MTP=3 可接受，但 nst=4/5 线性增加 linear reserve，应谨慎用于更高并发。
-
-优先优化假设：
-1. 先做非 MTP decode 与 MTP spec-verify 的路径级 diff，再决定是否改局部 transpose。重点检查两条路径是否复用同一个 causal conv wrapper、同一套 weight 预布局、同一套输入/输出 layout contract。
-2. 其次做 MTP accept/verify 逻辑融合，目标是减少 `Range/Pack/Concat/Softmax/ArgMax/Cumsum` 等小 op 和 host sync。
-3. 再评估 TP=4 AllReduce/AllGather overlap 或批量化通信，重点看 decode 阶段 `allreduceAicpuKernel` + HCCL allreduce/allgather 的高占比。
-
-MTP transpose 专项强制检查：
-- 如果 `Transpose` 主要出现在 MTP/speculative 路径，不能先直接修改 `transpose()` 调用点；必须先对比非 MTP decode 路径。
-- 已知风险点：非 MTP decode 可能走 `causal_conv1d`，并在权重加载/算子封装侧提前完成 weight reshape/预布局；MTP spec-verify 可能走 `causal_conv1d_update`，手工构造 `CausalConv1dUpdateParams`，从而重新引入 input/state/weight layout 适配和 transpose。
-- 对 main、preview 或任何新分支，如果看到 `conv_weight.transpose(0,1).contiguous()`、`mixed_qkv.transpose(1,2)`、`run_spec_verify_conv()` round-trip，只能先标记为“局部症状”；优先尝试让 MTP 复用非 MTP 的 `causal_conv1d` 路径，或新增等价 fused spec-verify causal conv。
-- 报告结论必须区分“局部减损”和“结构性修复”。缓存 weight、删 round-trip transpose 属于局部减损；复用 `causal_conv1d` 或等价 fused 算子才是结构性修复。
-- PR #1536 特别注意：当前 PR 代码（`1d07999f`）是局部 transpose 减损，仍走 `run_spec_verify_conv()` / `causal_conv1d_update`；不能在 PR 描述或复盘中写成已经复用 `causal_conv1d`。
-
-### 2026-05-25 MTP=3 Transpose 消除验证
-
-代码：在 `qwen3_gated_delta_net_base.{cpp,h}` 恢复 MTP spec-verify Transpose 消除逻辑：
-- `run_spec_verify_conv()` 改为接收/返回 `[B,T,C]`，避免内部 `transpose(1,2)` round-trip。
-- spec-verify 分支缓存 `conv_weight_transposed_`，避免每步重复 `conv_weight.transpose(0,1).contiguous()`。
-- `process_mixed_qkv()` 根据输入布局决定是否 transpose。
-
-复盘后的更准确根因：非 MTP decode 路径已经走 `causal_conv1d`，并复用了权重预 reshape/预布局路径，所以不会在每个 decode step 重复做 weight/layout transpose；MTP spec-verify 路径没有复用 `causal_conv1d`，而是手工构造 `CausalConv1dUpdateParams` 调用 `causal_conv1d_update`，因此重新引入了输入输出和 weight layout 适配。当前 transpose-opt 是有效减损，但不是最终结构性修复；下一版应优先尝试让 MTP 复用 `causal_conv1d` 路径或新增等价 fused spec-verify causal conv。
-
-2026-05-27 复用路径 prototype 经验：
-- 该 prototype 不是 PR #1536 已合入内容；引用时必须标注为后续方案。
-- 优先复用非 MTP decode 的 `causal_conv1d`，而不是继续局部修补 `causal_conv1d_update` 的 transpose。实现上让 MTP spec-verify 输入/输出保持 `[B,T,C]`，直接使用 `load_common_state_dict()` 中已经预布局的 conv weight。
-- `aclnnCausalConv1d` 同时存在 host `IntArrayRef` workspace API 和 tensor workspace API。MTP spec verify 复用该算子时，不能把 replay 会变化的 `cache_indices/num_accepted_tokens` 转成 host vector；否则 ACL graph capture 会固化旧值。
-- 重要风险：`query_start_loc` 在同一 graph shape 下通常是静态 padding 序列，但 `cache_indices` 绑定真实 linear state slot，`num_accepted_tokens` 绑定每步 accepted prefix，二者必须走 tensor 输入并由 graph persistent buffer replay 更新。graph on/off、parallel>1、多 batch size 变化都必须做 10 条以上精度验证。
-- 如果只把 `num_accepted_tokens` 改回 tensor，但 `cache_indices` 仍是 host `IntArrayRef`，并发/多请求下仍可能读写错误 conv cache 行，表现为输出重复、乱码标点、长尾反复 `answer:D` 等精度异常。
-- 构建经验：`python setup.py build` 先做 submodule commit 校验；如果 `third_party/tilelang-ascend` 或 `third_party/torch_npu_ops` checkout 与主仓记录不一致，会在编译前失败。直接 Ninja 重链可能暴露 `ops_api.cpp` 与 `torch_npu_ops` 接口不匹配，不能用这种状态做性能结论。
-
-构建补充：当前 CANN op_api 的 `aclnnBeamSearchGroupGetWorkspaceSize()` 多了 `topK` 参数，需在 `beam_search_rec.cpp` 传 `top_tokens.size(-1)` 才能完整链接。
-
-Benchmark 对比（TP=4, Phy 8-11, random 20k/1k, `parallel=1`, `number=5`, chunk prefill, MTP=3）：
-
-| 版本 | Avg Latency(s) | TTFT(ms) | TPOT(ms) | Output TPS | Decoded/Iter | Accept |
-|------|----------------|----------|----------|------------|--------------|--------|
-| before | 14.564 | 2524.8 | 12.05 | 66.82 | 3.21 | 68.8% |
-| transpose-opt | 14.03 | 2471.5 | 11.57 | 69.31 | 3.13 | 68.0% |
-
-Decode-focused profiling 对比（32 input / 200 output, rank0）：
-
-| 指标 | before | transpose-opt | 变化 |
-|------|--------|----------------|------|
-| Transpose time | 505.08 ms | 205.86 ms | -59.2% |
-| Transpose calls | 36,701 | 12,604 | -65.7% |
-| Device total | 5310.22 ms | 5005.63 ms | -5.7% |
-| Decode TPOT | 10.62 ms | 9.90 ms | -6.8% |
-| Output TPS | 66.25 | 69.70 | +5.2% |
-
-精度冒烟：GSM8K `limit=10`，`mean_acc=1.0`，evalscope RC=0，无服务异常。
-
-Artifact:
-- Benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/benchmark/random_20k_1k_parallel_1_number_5/evalscope.log`
-- Accuracy: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/accuracy/gsm8k_limit10/reports/Qwen35-27B/gsm8k.json`
-- Profiling: `/home/g00510989/xllm/runs/20260525_mtp3_transpose_opt/profiling/mtp3_transpose_decode32_out200_cards8_11_20260525_005812/PROF_000001_20260525005815694_BQNAKJOMRDIQFFAA`
-
-### 2026-05-25 MTP accept mask 小算子反例
-
-目标：优化 `RejectionSampler::build_accepted_mask()`，尝试减少 MTP accept/verify 路径中的 `Range/ArgMax` 小算子。
-
-验证环境：TP=4, Phy 8-11, random 20k/1k, `parallel=1`, `number=5`, chunk prefill, MTP=3。基线为上述 transpose-opt。
-
-| 版本 | 实现 | Avg Latency(s) | TTFT(ms) | TPOT(ms) | Output TPS | Decoded/Iter | Accept |
-|------|------|----------------|----------|----------|------------|--------------|--------|
-| transpose-opt baseline | 原始 `argmax + arange + <=` | 14.03 | 2471.5 | 11.57 | 69.31 | 3.13 | 68.0% |
-| cumprod mask | `accepted.to(int32).cumprod(dim=1).to(bool) + cat` | 14.12 | 2325.3 | 11.81 | 68.87 | 2.98 | 66.4% |
-| bool-prefix mask | 短 `n_spec` 上 slice + `logical_and` 前缀 + cat | 14.16 | 2458.4 | 11.71 | 68.69 | 3.00 | 66.6% |
-
-结论：
-- 这两个 Torch-level mask 改写都未超过 transpose-opt baseline，不能作为有效优化提交。
-- `cumprod` 虽减少 `Range/ArgMax`，但引入更重的前缀扫描；`bool-prefix` 避免 dtype 转换和扫描，但多个 slice/logical_and/cat 仍不足以抵消开销。
-- 后续若继续做 accept/verify 小算子，应走真正的融合 kernel 或复用现有 `kernel::rejection_sample` 路径，并同时处理 selected-only draft probs；不要再在 eager Torch 层局部替换 `build_accepted_mask()`。
-
-Artifact:
-- Cumprod benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_smallop/perf/random20k_1k_p1_n5/20260525_012954/Qwen35-27B/performance_summary.txt`
-- Bool-prefix benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_smallop_boolprefix/perf/random20k_1k_p1_n5/20260525_013755/Qwen35-27B/performance_summary.txt`
-- 单测：两版均通过 `sampler_test`（11 passed, 2 MLU-only skipped）。
-
-### 2026-05-25 MTP draft extend 提前准备 P0/P0b
-
-目标：参考 vLLM async schedule，让 target 模型 device 计算期间尽量推进 draft 模型下发前置工作，减少 draft extend 空泡。
-
-实现分层：
-- P0 negative：在 target validate async 期间枚举所有可能 `last_idx` 的 draft extend 候选元数据。该方法等价但 CPU 开销过大，拖慢 decode 临界路径。
-- P0b effective：只提前不依赖 target 输出的轻量工作，包括 `base_input.to(device_, dtype_)`、decode CPU view、原始 input token 缓存；target 返回后只为真实 accepted prefix 构造一条 draft extend 输入。
-
-Benchmark 对比（TP=4, Phy 8-11, random 20k/1k, `parallel=1`, `number=5`, chunk prefill, MTP=3）：
-
-| 版本 | Avg Latency(s) | TTFT(ms) | TPOT(ms) | Output TPS | Decoded/Iter | Accept |
-|------|----------------|----------|----------|------------|--------------|--------|
-| transpose-opt baseline | 14.03 | 2471.5 | 11.57 | 69.31 | 3.13 | 68.0% |
-| P0 enumerate candidates | 14.81 | 2358.6 | 12.46 | 65.75 | 2.90 | 65.5% |
-| P0b light prepare | 13.85 | 2466.0 | 11.39 | 70.18 | 3.09 | 67.6% |
-
-精度冒烟：P0b GSM8K `limit=10`，`mean_acc=1.0`，evalscope RC=0。
-
-经验规则：
-- MTP 提前下发/提前准备必须先画出“依赖 target logits/embedding/accepted prefix”的边界；任何依赖这些结果的工作不能在当前等价实现中提前执行。
-- 不要枚举 speculative future 候选来换重叠，尤其是 `num_speculative_tokens + 1` 个候选乘 batch 的 CPU 构图/向量拼接，会直接吃掉 decode 周期。
-- 可以优先提前 `ForwardInput` 复制、CPU view、固定 layout 信息等确定性准备；收益通常小但风险低。
-- 真正的 vLLM-style async draft dispatch 需要 shadow/pending draft KV 或双缓冲，并提供 validate 后的 commit/rollback 机制，否则会破坏 draft KV 与 target accepted prefix 的一致性。
-
-Artifact:
-- P0 negative benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_async_draft_p0/perf/random20k_1k_p1_n5/20260525_071955/Qwen35-27B/performance_summary.txt`
-- P0b benchmark: `/home/g00510989/xllm/runs/20260525_mtp3_async_draft_p0b/perf/random20k_1k_p1_n5/20260525_072650/Qwen35-27B/performance_summary.txt`
-- P0b accuracy: `/home/g00510989/xllm/runs/20260525_mtp3_async_draft_p0b/accuracy/gsm8k_limit10/reports/Qwen35-27B/gsm8k.json`
+MTP 历史 profiling 复盘、transpose 消除、小算子反例和 draft-prepare overlap
+经验放在
+[`references/mtp-profiling-lessons.md`](references/mtp-profiling-lessons.md)。
+只有当前任务涉及 MTP/speculative decode 时再加载。
 
 ## 输出契约
 

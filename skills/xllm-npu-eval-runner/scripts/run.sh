@@ -26,13 +26,13 @@ export INF_NAN_MODE_ENABLE=0
 export INF_NAN_MODE_FORCE_DISABLE=1
 
 LOG_DIR="$PROJECT_ROOT/log"
-mkdir -p $LOG_DIR
-rm -rf $LOG_DIR/node_*.log
+mkdir -p "$LOG_DIR"
+rm -rf "$LOG_DIR"/node_*.log
 
 export PROFILING_MODE=dynamic
 
-MODEL_PATH="/home/data/weights/Qwen35-27B"
-DRAFT_MODEL_PATH="/home/data/weights/Qwen35-27B-mtp"
+MODEL_PATH="${MODEL_PATH:-/models/Qwen35-27B}"
+DRAFT_MODEL_PATH="${DRAFT_MODEL_PATH:-/models/Qwen35-27B-mtp}"
 XLLM_BIN="$PROJECT_ROOT/xllm/build/xllm/core/server/xllm"
 
 MASTER_NODE_ADDR="127.0.0.1:12345"
@@ -47,8 +47,8 @@ do
 PORT=$((START_PORT + i))
 DEVICE=$((START_DEVICE + i))
 LOG_FILE="$LOG_DIR/node_$i.log"
-$XLLM_BIN \
-    --model $MODEL_PATH \
+"$XLLM_BIN" \
+    --model "$MODEL_PATH" \
     --devices="npu:$DEVICE" \
     --port $PORT \
     --master_node_addr=$MASTER_NODE_ADDR \
@@ -61,7 +61,7 @@ $XLLM_BIN \
     --enable_prefix_cache=true \
     --enable_chunked_prefill=true \
     --max_concurrent_requests=8 \
-    --draft_model $DRAFT_MODEL_PATH \
+    --draft_model "$DRAFT_MODEL_PATH" \
     --draft_devices="npu:$DEVICE" \
     --num_speculative_tokens 3 \
     --enable_schedule_overlap=true \
@@ -70,5 +70,5 @@ $XLLM_BIN \
     --enable_shm=true  \
     --task="generate" \
     --backend llm \
-  >> $LOG_FILE 2>&1 &
+  >> "$LOG_FILE" 2>&1 &
 done

@@ -9,7 +9,7 @@ workflow targets.
 
 ## 仓库定位
 
-本仓库沉淀一套 **NPU AI Infra Auto-Driven Workflow**：面向昇腾 NPU 上的
+本仓库沉淀一套 **NPU AI Infra Evidence-Driven Workflow**：面向昇腾 NPU 上的
 大模型推理框架，用统一证据标准驱动 benchmark、profiling、capacity
 planning、incident triage、code review、kernel pilot、PR history 查询和
 SOTA loop。
@@ -133,7 +133,9 @@ xllm-npu-optimization-skills/
 │   │   │   ├── compare_npu_benchmark.py     # 框架对比脚本
 │   │   │   └── validate_framework_cli.py     # CLI 验证脚本
 │   │   └── references/
-│   │       └── npu-fairness-rules.md         # NPU 公平性规则
+│   │       ├── npu-fairness-rules.md         # NPU 公平性规则
+│   │       ├── benchmark-runbook.md          # Benchmark 配置和脚本模板
+│   │       └── mtp-benchmark-lessons.md      # MTP benchmark 历史经验
 │   │
 │   ├── xllm-npu-profiler/                   # Profiling 分析
 │   │   ├── SKILL.md
@@ -144,6 +146,7 @@ xllm-npu-optimization-skills/
 │   │       ├── npu-fuse-catalog.md          # NPU 融合算子目录
 │   │       ├── npu-overlap-catalog.md       # NPU 重叠机会目录
 │   │       ├── ascend-profiling-formats.md   # 昇腾 Profiling 格式说明
+│   │       ├── mtp-profiling-lessons.md      # MTP profiling 历史经验
 │   │       ├── qwen35-27b-kernel-profile.md  # Qwen3.5 kernel profiling 对比
 │   │       └── source-map.md                 # xLLM profiler 源码地图
 │   │
@@ -151,6 +154,7 @@ xllm-npu-optimization-skills/
 │   │   ├── SKILL.md
 │   │   └── references/
 │   │       ├── optimization-paths.md        # 昇腾优化路径详细文档
+│   │       ├── qwen35-mtp-case.md           # Qwen3.5 MTP RLCR 案例
 │   │       └── stop-conditions.md           # 停止条件说明
 │   │
 │   ├── xllm-npu-code-review/                # NPU 代码审查
@@ -160,11 +164,14 @@ xllm-npu-optimization-skills/
 │   │       └── common-pitfalls.md           # 常见陷阱
 │   │
 │   ├── xllm-npu-accuracy-debug/             # 精度异常定位
-│   │   └── SKILL.md
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       └── accuracy-debug-runbook.md     # CEval 和 bisect 模板
 │   │
 │   └── xllm-npu-incident-triage/            # 生产事故诊断
 │       ├── SKILL.md
 │       └── references/
+│           ├── incident-case-studies.md      # 历史事故案例
 │           ├── npu-error-catalog.md          # NPU 错误目录
 │           └── replay-workflow.md           # 复现工作流
 │
