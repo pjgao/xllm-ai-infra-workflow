@@ -28,8 +28,8 @@ xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 
 | Skill | 路径 | 何时加载 |
 |-------|------|---------|
+| xllm-npu-eval-runner | `skills/xllm-npu-eval-runner/SKILL.md` | 需要启动/复用 xLLM 服务并执行 evalscope 性能或精度评测时 |
 | xllm-npu-benchmark | `skills/xllm-npu-benchmark/SKILL.md` | 需要对比 xLLM / vLLM-Ascend / SGLang NPU 性能时 |
-| xllm-eval | `skills/xllm-eval/SKILL.md` | 需要运行 xLLM 性能/精度自动评测并和 baseline 对比时 |
 | xllm-npu-profiler | `skills/xllm-npu-profiler/SKILL.md` | 需要定位 NPU 性能瓶颈、生成五表报告时 |
 | xllm-npu-sota-loop | `skills/xllm-npu-sota-loop/SKILL.md` | 端到端驱动 NPU SOTA 优化闭环、判断优化是否达标时 |
 | xllm-npu-code-review | `skills/xllm-npu-code-review/SKILL.md` | 提交 NPU 特化代码前必须审查的 7 个维度 |
@@ -44,7 +44,7 @@ Phase 0     环境准备（NPU 健康、框架可用、模型就绪）
   ↓
 Phase 0.5   查 PR 历史（model-pr-optimization-history）
   ↓
-Phase 1     公平基准测试（xllm-npu-benchmark）
+Phase 1     评测执行（xllm-npu-eval-runner）+ 公平基准测试（xllm-npu-benchmark）
   ↓
 Phase 2     差异判定
   ├─ 目标框架胜出 / 平局 → 写 final_summary.md → 结束
@@ -84,10 +84,18 @@ Phase 5     RLCR 迭代（xllm-npu-sota-loop）
 
 如果历史脚本已有固定输出目录，可以继续使用，但报告中要补齐上述字段。缺少关键 artifact 的 run 只能作为 debug/smoke，不应用作 PR 性能或精度结论。
 
+统一模板：
+- `references/run-manifest-template.md`：所有正式 run 的 manifest 字段。
+- `references/perf-artifact-schema.md`：性能评测产物目录和 `metrics.json` 字段。
+- `references/accuracy-artifact-schema.md`：精度评测产物目录、验证等级和 score 字段。
+- `references/profiling-artifact-schema.md`：profiling 采集产物、timeline notes 和 inconclusive 判定。
+
 ## 常用脚本
 
 ```bash
 # 基准对比
+skills/xllm-npu-eval-runner/scripts/eval_perf.sh
+
 python skills/xllm-npu-benchmark/scripts/collect_evalscope_results.py \
   --root /path/to/evalscope/results \
   --framework xllm \

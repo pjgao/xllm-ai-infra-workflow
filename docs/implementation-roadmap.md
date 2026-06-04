@@ -189,7 +189,7 @@ kernel-to-op mapping 的独立能力。
 
 缺口：
 
-- 没有固定 run manifest schema。
+- 已有基础 `references/run-manifest-template.md`，但还没有机器可校验 schema。
 - 没有自动创建 run root、写入 phase 状态、记录 lineage 的工具。
 - 没有 Codex goal prompt 模板和固定 SOTA loop prompt。
 - 没有“固定公平 benchmark 在 loop 外，gap/profiler/patch/revalidation 在 loop 内”的机器校验。
@@ -200,7 +200,7 @@ kernel-to-op mapping 的独立能力。
 - `prompts/xllm-npu-sota-a3-prompts.md`
 - `prompts/xllm-npu-sota-a3-codex-goal-prompts.md`
 - `scripts/xllm_npu_sota_run.py`
-- `references/run-manifest-schema.md`
+- `references/run-manifest-schema.md`（基于现有 template 补 JSON/YAML 可校验版本）
 - `humanize/lineage.schema.jsonl.md`
 
 ### 2.9 Testing / CI：补仓库可信度底座

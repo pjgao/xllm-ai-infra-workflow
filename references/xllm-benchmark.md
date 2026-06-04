@@ -1,6 +1,6 @@
 # xLLM Benchmark Baseline
 
-> Update this file whenever new baseline results are available. The xllm-eval skill fetches this file to compare results.
+> Update this file whenever new baseline results are available. The xllm-npu-eval-runner skill can fetch this file for a quick baseline check; formal comparisons should use xllm-npu-benchmark.
 
 ---
 

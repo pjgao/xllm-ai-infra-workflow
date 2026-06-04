@@ -1,11 +1,24 @@
 ---
-name: xllm-eval
-description: Automated xLLM performance and accuracy evaluation. Use when the user wants to run xllm benchmarks, eval tests, performance tests, accuracy tests, or validate model deployment quality. Triggers on keywords like "xllm eval", "performance test", "accuracy test", "benchmark", "run eval", "test model".
+name: xllm-npu-eval-runner
+description: xLLM NPU evaluation runner. Use when the user wants to execute xLLM service startup, evalscope performance runs, accuracy runs, and artifact collection. This skill produces raw perf/accuracy artifacts; use xllm-npu-benchmark for fairness and baseline comparison, xllm-npu-accuracy-debug for accuracy root cause analysis, and xllm-npu-profiler for msprof analysis.
 ---
 
-# xLLM Automated Evaluation Skill
+# xLLM NPU Evaluation Runner
 
-This skill orchestrates a full xLLM evaluation pipeline: align parameters with the user, update scripts, start the service, run performance and accuracy tests, then compare results against the GitHub baseline.
+This skill is the execution layer for xLLM NPU evaluation. It starts or reuses
+an xLLM service, runs evalscope performance and accuracy workloads, and writes
+reproducible artifacts.
+
+It does not own final performance fairness conclusions, accuracy root-cause
+analysis, or profiling interpretation:
+
+| Need | Use |
+|---|---|
+| Start service and run evalscope | this skill |
+| Compare baseline/current or framework A/B | `xllm-npu-benchmark` |
+| Debug bad answers, CEval drops,乱码 | `xllm-npu-accuracy-debug` |
+| Collect and analyze msprof traces | `xllm-npu-profiler` |
+| Drive end-to-end optimization loop | `xllm-npu-sota-loop` |
 
 ## Workflow Overview
 
@@ -16,18 +29,21 @@ This skill orchestrates a full xLLM evaluation pipeline: align parameters with t
        |
 3. Check Dependencies (evalscope, evalscope[perf])
        |
-4. Start xLLM Service (skip if already running)
+4. Create Run Root and Manifest
        |
-5. Wait for Service Ready
+5. Start xLLM Service (skip if already running)
        |
-6. Run Performance Test (eval_perf.sh)
+6. Wait for Service Ready
        |
-7. Run Accuracy Test (eval_acc.sh)
+7. Run Performance Test (eval_perf.sh)
        |
-8. Fetch Baseline from GitHub
+8. Run Accuracy Test (eval_acc.sh)
        |
-9. Compare & Report Results
+9. Write Metrics and Report
 ```
+
+For formal conclusions, hand the artifacts to `xllm-npu-benchmark` or
+`xllm-npu-accuracy-debug` after this runner finishes.
 
 ## Step 1: Parameter Alignment
 
@@ -60,9 +76,9 @@ After collecting parameters, update all 3 scripts **atomically** (all at once).
 
 ### Script Locations (relative to project root)
 
-- **Startup**: `.opencode/skills/xllm-eval/scripts/run.sh`
-- **Performance**: `.opencode/skills/xllm-eval/scripts/eval_perf.sh`
-- **Accuracy**: `.opencode/skills/xllm-eval/scripts/eval_acc.sh`
+- **Startup**: `.opencode/skills/xllm-npu-eval-runner/scripts/run.sh`
+- **Performance**: `.opencode/skills/xllm-npu-eval-runner/scripts/eval_perf.sh`
+- **Accuracy**: `.opencode/skills/xllm-npu-eval-runner/scripts/eval_acc.sh`
 
 ### run.sh Updates
 
@@ -107,7 +123,36 @@ python3 -c "import evalscope.perf" 2>/dev/null || pip install evalscope[perf]
 
 If either check fails, auto-install the missing package. Only proceed to Step 4 after both are confirmed available.
 
-## Step 4: Start xLLM Service
+## Step 4: Create Run Root and Manifest
+
+Create a run root before service startup:
+
+```bash
+RUN_ROOT="${RUN_ROOT:-runs/eval/$(date +%Y%m%d_%H%M%S)_xllm_npu_eval}"
+mkdir -p "$RUN_ROOT"/{env,service,perf,accuracy}
+```
+
+Write `manifest.md` using
+[`references/run-manifest-template.md`](../../references/run-manifest-template.md).
+At minimum record:
+
+- xLLM branch, commit, and dirty diff state.
+- Model path, optional draft model path, tokenizer path.
+- Device ids, CANN/driver/torch_npu versions if available.
+- Service startup command and API URL.
+- Workload shape, sampling parameters, warmup count, parallel, and number.
+- Whether this run is `smoke`, `quick`, or `full`.
+
+Save pre-run environment snapshots:
+
+```bash
+npu-smi info > "$RUN_ROOT/env/npu-smi.before.txt"
+pgrep -af 'xllm|vllm|sglang|python|evalscope|msprof' > "$RUN_ROOT/env/process.before.txt" || true
+free -h > "$RUN_ROOT/env/mem.before.txt"
+uptime > "$RUN_ROOT/env/load.before.txt"
+```
+
+## Step 5: Start xLLM Service
 
 Before starting, check if the service is already running:
 
@@ -116,15 +161,15 @@ if curl -s <api_url>/models > /dev/null 2>&1; then
   echo "xLLM service already running, skipping startup."
 else
   echo "Starting xLLM service..."
-  bash .opencode/skills/xllm-eval/scripts/run.sh
+  bash .opencode/skills/xllm-npu-eval-runner/scripts/run.sh
 fi
 ```
 
-If the service is already available, skip to Step 6 (Run Performance Test).
+If the service is already available, skip to Step 7 (Run Performance Test).
 
 **Important**: The service starts in background. After launching, wait for it to be ready.
 
-## Step 5: Wait for Service Ready
+## Step 6: Wait for Service Ready
 
 Poll the service health endpoint until it responds:
 
@@ -141,10 +186,10 @@ done
 
 If the service doesn't start within 10 minutes, check `log/node_0.log` for errors and report to the user.
 
-## Step 6: Run Performance Test
+## Step 7: Run Performance Test
 
 ```bash
-bash .opencode/skills/xllm-eval/scripts/eval_perf.sh
+bash .opencode/skills/xllm-npu-eval-runner/scripts/eval_perf.sh
 ```
 
 The performance test behavior depends on Test Mode:
@@ -153,19 +198,47 @@ The performance test behavior depends on Test Mode:
   1. **Parallel=1, Number=4**: Single-request latency baseline
   2. **Parallel=5, Number=20**: Concurrent throughput test
 
-Results are output to `outputs/` directory. Look for `benchmark_summary.json` files.
+Results are output to `outputs/` by default. For formal runs, copy or configure
+outputs under `$RUN_ROOT/perf/` and keep the raw evalscope directory intact.
+Look for `benchmark_summary.json` files and mirror key fields into
+`$RUN_ROOT/perf/metrics.json`.
 
-## Step 7: Run Accuracy Test
+Formal performance runs must use request-level warmup. For evalscope, set
+`--warmup-num 1` or higher unless the user explicitly asks for cold-start
+latency. Record the warmup value in `manifest.md` and `metrics.json`.
+
+## Step 8: Run Accuracy Test
 
 ```bash
-bash .opencode/skills/xllm-eval/scripts/eval_acc.sh
+bash .opencode/skills/xllm-npu-eval-runner/scripts/eval_acc.sh
 ```
 
 **Important**: Use Bash tool with `timeout: 3600000` (1 hour) when executing this command. Accuracy evaluation takes significantly longer than performance tests.
 
-Accuracy results are printed to stdout. Parse the output for per-dataset scores.
+Accuracy results are printed to stdout. For formal runs, save raw predictions,
+failed cases, score files, and a short `report.md` under `$RUN_ROOT/accuracy/`.
+Use [`references/accuracy-artifact-schema.md`](../../references/accuracy-artifact-schema.md)
+for the required artifact shape.
 
-## Step 8: Fetch Baseline from GitHub
+## Step 9: Write Metrics and Report
+
+This runner should write a compact execution report:
+
+```text
+$RUN_ROOT/
+  manifest.md
+  env/
+  service/
+  perf/
+  accuracy/
+  report.md
+```
+
+The report should say what was executed, where raw artifacts are stored, and
+whether the run is strong enough for a formal conclusion. If it is only a smoke
+run, say so explicitly.
+
+## Optional: Fetch Baseline from GitHub
 
 Fetch the benchmark baseline data from the GitHub repository:
 
@@ -177,7 +250,11 @@ Use the WebFetch tool to retrieve this URL. If the URL returns a 404, inform the
 
 Parse the markdown tables to extract baseline values for the matching model and configuration.
 
-## Step 9: Compare & Report Results
+Baseline comparison here is only a convenience check. Formal benchmark
+comparison belongs in `xllm-npu-benchmark`, which validates fairness,
+environment gates, warmup, and comparable startup parameters.
+
+## Optional: Quick Compare Table
 
 Build a comparison table and present it to the user:
 

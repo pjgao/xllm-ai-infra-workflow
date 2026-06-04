@@ -42,12 +42,28 @@ SOTA loop。
 
 | Skill | 说明 | 关键产物 |
 |-------|------|---------|
+| [`xllm-npu-eval-runner`](skills/xllm-npu-eval-runner/SKILL.md) | xLLM NPU 评测执行器；负责启动/复用服务、跑 evalscope 性能和精度任务、收集原始 artifacts | `runs/eval` / `runs/perf` / `runs/accuracy` |
 | [`xllm-npu-benchmark`](skills/xllm-npu-benchmark/SKILL.md) | NPU 多框架公平基准测试；当前覆盖 xLLM vs vLLM-Ascend，规划扩展 SGLang NPU | `candidates.jsonl` / `summary.md` / `winning-commands.md` |
 | [`xllm-npu-profiler`](skills/xllm-npu-profiler/SKILL.md) | 昇腾 Profiling 五表分析；当前以 xLLM trace 为主，规划统一多框架产物 schema | kernel / overlap / fuse / dispatch / memory 五表 |
 | [`xllm-npu-sota-loop`](skills/xllm-npu-sota-loop/SKILL.md) | NPU SOTA 自治优化循环；以 xLLM 为首个 target，流程可迁移到 vLLM-Ascend / SGLang | run manifest / refined plan / RLCR ledger |
 | [`xllm-npu-code-review`](skills/xllm-npu-code-review/SKILL.md) | NPU 特化代码审查；覆盖 C++ engine、图模式、KV Cache、HCCL、TileLang/AscendC | 分级 review finding |
 | [`xllm-npu-accuracy-debug`](skills/xllm-npu-accuracy-debug/SKILL.md) | 精度异常定位、A/B 验证和 commit 二分 | accuracy report / bisect notes |
 | [`xllm-npu-incident-triage`](skills/xllm-npu-incident-triage/SKILL.md) | NPU 生产事故诊断与 replay-first 排障 | incident bundle / replay report |
+
+## 如何选择 Skill
+
+| 场景 | 首选 Skill | 说明 |
+|------|------------|------|
+| 启动 xLLM 并跑一次性能/精度评测 | `xllm-npu-eval-runner` | 只负责执行和收集原始产物 |
+| 对比 xLLM / vLLM-Ascend / SGLang 的性能 | `xllm-npu-benchmark` | 负责公平性、warmup、环境门禁和结果比较 |
+| TTFT/TPOT/TPS 异常或要解释瓶颈 | `xllm-npu-profiler` | 负责 msprof 采集、五表和 timeline 分析 |
+| 输出乱码、CEval 掉分、GPU/NPU 不一致 | `xllm-npu-accuracy-debug` | 负责最小复现、A/B、坏例和二分 |
+| crash / OOM / HCCL / PagedAttention setup 失败 | `xllm-npu-incident-triage` | 负责 replay-first 事故定位 |
+| 持续优化直到达到目标收益 | `xllm-npu-sota-loop` | 负责串联 benchmark、profiling、patch、验证和台账 |
+
+职责边界：`xllm-npu-eval-runner` 是执行层，`xllm-npu-benchmark` /
+`xllm-npu-profiler` / `xllm-npu-accuracy-debug` 是分析层，
+`xllm-npu-sota-loop` 是编排层。
 
 ## 辅助层
 
@@ -84,7 +100,11 @@ xllm-npu-optimization-skills/
 │   └── xllm-npu-optimization-design.md      # NPU 优化设计方案
 │
 ├── references/                              # 全局引用文件
-│   └── custom-code-style.md                 # xLLM NPU 代码风格指南
+│   ├── custom-code-style.md                 # xLLM NPU 代码风格指南
+│   ├── run-manifest-template.md             # 统一 run manifest 模板
+│   ├── perf-artifact-schema.md              # 性能产物契约
+│   ├── accuracy-artifact-schema.md          # 精度产物契约
+│   └── profiling-artifact-schema.md         # Profiling 产物契约
 │
 ├── humanize/                                # 优化过程台账
 │   ├── attempt-ledger.md                    # 尝试记录
@@ -97,6 +117,15 @@ xllm-npu-optimization-skills/
 │   └── qwen3_gated_delta_net_base.h
 │
 ├── skills/                                  # 核心 Skills
+│   ├── xllm-npu-eval-runner/                # xLLM 评测执行器
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   │   ├── run.sh
+│   │   │   ├── eval_perf.sh
+│   │   │   └── eval_acc.sh
+│   │   └── references/
+│   │       └── benchmark_template.md
+│   │
 │   ├── xllm-npu-benchmark/                  # 基准测试
 │   │   ├── SKILL.md
 │   │   ├── scripts/
@@ -190,11 +219,12 @@ done
 ```
 
 预期执行路径：
-1. `xllm-npu-benchmark`：建立公平基准
-2. `xllm-npu-profiler`：Profiling 五表分析
-3. `model-pr-optimization-history`：查询历史 PR
-4. `xllm-npu-sota-loop`：RLCR 迭代优化
-5. `kernel-pilot`：针对热点 kernel 的专项优化
+1. `xllm-npu-eval-runner`：执行 xLLM 评测并收集原始产物
+2. `xllm-npu-benchmark`：建立公平基准和 baseline/current 对比
+3. `xllm-npu-profiler`：Profiling 五表分析
+4. `model-pr-optimization-history`：查询历史 PR
+5. `xllm-npu-sota-loop`：RLCR 迭代优化
+6. `kernel-pilot`：针对热点 kernel 的专项优化
 
 通用多框架示例：
 

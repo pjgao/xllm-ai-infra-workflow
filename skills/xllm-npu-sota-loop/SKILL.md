@@ -12,7 +12,7 @@ description: xLLM 昇腾 NPU 910B3 (A3) SOTA 自治优化循环。在 xLLM 与 v
 ```
 Phase 0   → 初始化
 Phase 0.5 → 模型 PR 历史知识门控
-Phase 1   → 固定公平基准测试（调用 xllm-npu-benchmark）
+Phase 1   → 评测执行与固定公平基准测试（调用 xllm-npu-eval-runner + xllm-npu-benchmark）
 Phase 2   → 差异判定（阈值 1%）
 Phase 3   → RLCR 前的必要 Profiling（调用 xllm-npu-profiler）
 Phase 4   → 构建优化 Plan
@@ -23,6 +23,9 @@ Phase 5   → 启动 RLCR 迭代
 - **不比较不公平数据**：永远不将 tuned xLLM 与 vLLM-Ascend defaults 比较
 - **不跳过 profiling**：Phase 3 报告不存在前不得开始 patch
 - **证据驱动**：所有优化决策有 benchmark 数据 + profiling trace + PR 历史支持
+- **执行和分析分层**：`xllm-npu-eval-runner` 只负责执行评测和产物收集；
+  `xllm-npu-benchmark` / `xllm-npu-profiler` / `xllm-npu-accuracy-debug`
+  负责结论和根因分析。
 
 ## Phase 0: 初始化
 
@@ -65,7 +68,9 @@ mkdir -p runs/$(date +%Y%m%d)_<model_slug>_npu_sota/{benchmark,profiles,analysis
 
 ## Phase 1: 固定公平基准测试
 
-调用 [`xllm-npu-benchmark`](../xllm-npu-benchmark/SKILL.md) skill：
+先调用 [`xllm-npu-eval-runner`](../xllm-npu-eval-runner/SKILL.md) 执行服务启动、
+evalscope 性能/精度评测和原始 artifact 收集，再调用
+[`xllm-npu-benchmark`](../xllm-npu-benchmark/SKILL.md) 判断公平性和对比结果：
 
 ```text
 > 在 A3 NPU 上，使用 benchmark skill 对 xLLM 和 vLLM-Ascend 进行公平对比
@@ -91,6 +96,8 @@ evalscope perf \
 - 不允许将 tuned xLLM 与 vLLM-Ascend defaults 比较
 - 每框架各自独立搜索最优配置
 - 记录完整启动命令
+- 产物必须满足 [`../../references/perf-artifact-schema.md`](../../references/perf-artifact-schema.md)
+  和 [`../../references/run-manifest-template.md`](../../references/run-manifest-template.md)
 
 产出：
 - `benchmark/*/benchmark_summary.json` — 汇总指标
