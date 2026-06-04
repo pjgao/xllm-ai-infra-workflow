@@ -21,12 +21,15 @@ xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 3. **每步决策有数据支撑**：所有判定必须基于五表中的可复现指标
 4. **RLCR 闭环**：Research → Learn → Code → Review → Validate → Record，严禁"写完就合"
 5. **经验不得丢失**：通用化时不得删除已有 xLLM/Qwen3.5/MTP 经验；失败实验、反例和环境信息也必须保留
+6. **启动与采集分离**：服务启动、性能压测、profiling 采集、精度评测必须有独立 artifact；profiling 脚本只 attach 已启动服务，不隐式启动 xLLM。
+7. **run 产物可复查**：build/deploy/perf/accuracy/profiling 每类 run 至少保存 manifest、raw log、结构化 metrics 和 report，避免只留下终端结论。
 
 ## Skills 总览
 
 | Skill | 路径 | 何时加载 |
 |-------|------|---------|
 | xllm-npu-benchmark | `skills/xllm-npu-benchmark/SKILL.md` | 需要对比 xLLM / vLLM-Ascend / SGLang NPU 性能时 |
+| xllm-eval | `skills/xllm-eval/SKILL.md` | 需要运行 xLLM 性能/精度自动评测并和 baseline 对比时 |
 | xllm-npu-profiler | `skills/xllm-npu-profiler/SKILL.md` | 需要定位 NPU 性能瓶颈、生成五表报告时 |
 | xllm-npu-sota-loop | `skills/xllm-npu-sota-loop/SKILL.md` | 端到端驱动 NPU SOTA 优化闭环、判断优化是否达标时 |
 | xllm-npu-code-review | `skills/xllm-npu-code-review/SKILL.md` | 提交 NPU 特化代码前必须审查的 7 个维度 |
@@ -68,6 +71,18 @@ Phase 5     RLCR 迭代（xllm-npu-sota-loop）
 1. 查对应框架的 `model-pr-optimization-history/<framework>/` 看是否已有该模型档案
 2. 没有则查 PR 历史并新建档案；当前 xLLM 档案可按 `qwen3-core.md` 格式扩展
 3. 新建 `$RUN_ROOT/manifest.md` 记录本次 run 的框架 commit hash / CANN 版本 / NPU 型号 / workload / SLA
+
+## 运行产物约定
+
+参考 `/home/g00510989/xllm_whj/ai-infra-development` 的多框架工作台经验，新任务尽量按任务类型拆分产物：
+
+- `runs/build/<run_id>/`：编译命令、submodule 状态、build log、server binary 校验。
+- `runs/deploy/<run_id>/`：启动命令、`npu-smi` 快照、可见卡、PID、服务日志、healthcheck、smoke。
+- `runs/perf/<run_id>/`：原始 evalscope/benchmark 输出、`metrics.json`、`report.md`、环境门禁。
+- `runs/accuracy/<run_id>/`：原始预测、失败样本、score、case 配置、`report.md`。
+- `profiling/<run_id>/`：`PROF_*`、`mindstudio_profiler_output/`、capture log、workload log、manifest。
+
+如果历史脚本已有固定输出目录，可以继续使用，但报告中要补齐上述字段。缺少关键 artifact 的 run 只能作为 debug/smoke，不应用作 PR 性能或精度结论。
 
 ## 常用脚本
 

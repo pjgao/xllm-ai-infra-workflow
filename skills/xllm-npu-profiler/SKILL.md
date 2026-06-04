@@ -73,6 +73,9 @@ python scripts/analyze_xllm_npu_profile.py \
 ACL graph warmup、首轮编译等噪声混入 trace。
 
 前置要求：
+- profiling 脚本不负责启动 xLLM。先用正常启动脚本启动服务并完成 healthcheck，
+  再 attach profiling；如果本次 profiling 临时启动了服务，结束前要明确是否保留
+  或停止服务，避免 HBM/PID 残留污染后续性能测试。
 - xLLM 启动脚本中必须设置：
   ```bash
   export PROFILING_MODE=dynamic
@@ -90,6 +93,9 @@ ACL graph warmup、首轮编译等噪声混入 trace。
   以及 `msprof --export=on` 导出结果。
 - 如果启动脚本未设置 `PROFILING_MODE=dynamic`，后续即使 `msprof` attach 成功，
   也可能无法得到预期的动态采集窗口或完整 profiling 数据。
+- 若未生成 `PROF_*`、未导出 `mindstudio_profiler_output/`、workload 命令失败、
+  或 warmup/healthcheck 被混入正式采集窗口，该次 profiling 只能标为
+  `INCONCLUSIVE`，不能支撑优化结论。
 
 典型采集流程：
 

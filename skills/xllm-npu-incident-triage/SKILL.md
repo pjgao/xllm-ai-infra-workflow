@@ -172,7 +172,24 @@ npu-smi info -t memory
 - Mooncake 全局 KV Cache 状态
 - 节点健康状态
 
-#### 2.7 构建/环境异常 → Build Environment 调试
+#### 2.7 部署产物缺失 → 先补证据
+
+症状：服务启动失败、healthcheck 超时、首个请求异常、profiling attach 失败、
+性能测试后 HBM/PID 残留。
+
+先确认是否有 deploy run artifact：
+- 启动命令和完整环境变量。
+- `npu-smi.before/after.txt`。
+- `visible_devices.txt`。
+- `pids.txt`，且 PID 能和 `ps -ef` 对上。
+- 每个 node/rank 的日志。
+- `/v1/models` healthcheck 输出。
+- 最小 smoke 请求和响应。
+
+缺少这些信息时，不要直接开始源码修改；先补最小可复现启动脚本和 artifact，
+避免把 HBM 残留、端口残留、HCCL 残留或错误 PID 当成源码 bug。
+
+#### 2.8 构建/环境异常 → Build Environment 调试
 
 症状：`python setup.py build --device npu` 明显比平时慢，或出现与改动无关的编译/链接错误。
 
