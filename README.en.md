@@ -229,6 +229,11 @@ The final result is recorded in humanize ledgers and model PR history.
 
 ### Codex / Claude Code / opencode
 
+Codex and opencode use the root `AGENTS.md` file as the project-level
+instruction entry point. Claude Code also reads `CLAUDE.md`. For that reason,
+this repository keeps the generic agent behavior principles in `AGENTS.md` and
+mirrors them in `CLAUDE.md`; update both when changing agent behavior.
+
 Symlinks are recommended so `git pull` updates skills automatically:
 
 ```bash
@@ -245,6 +250,7 @@ instead.
 ## Repository Layout
 
 ```text
+AGENTS.md                       Codex / opencode / generic agent project rules
 skills/                         core agent skills
 prompts/                        copy-ready task prompts for agents
 references/                     global artifact schemas and code style
@@ -254,7 +260,7 @@ humanize/                       run-level ledger contract; concrete ledgers live
 model-pr-optimization-history/   model PR history knowledge base
 kernel-pilot/                   NPU kernel experiment helper
 patches/                        minimal patches or migration notes, no full-file snapshots
-CLAUDE.md                       Claude Code / generic coding-agent guardrails
+CLAUDE.md                       Claude Code guardrails, synchronized with AGENTS.md
 ```
 
 ## Environment

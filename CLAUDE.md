@@ -1,16 +1,25 @@
 # CLAUDE.md
 
-Guidelines for coding agents working in this repository. Merge these with the
-active user request and any tool-specific instructions.
+Guidelines for Claude Code and other coding agents working in this repository.
+These principles mirror the generic rules in `AGENTS.md`; keep both files in
+sync when changing agent behavior.
 
 ## 1. Think Before Editing
 
 - State assumptions when the task is ambiguous.
 - If multiple interpretations change the implementation, ask before editing.
+- If a simpler approach exists, say so before choosing a heavier path.
 - Prefer the existing skill structure, artifact schema, and naming conventions.
 - For trivial documentation fixes, make the small obvious edit and verify it.
 
-## 2. Evidence Before Patch
+## 2. Simplicity First
+
+- Implement only what the user asked for and what the validation goal requires.
+- Do not add abstractions, configuration, compatibility layers, or speculative
+  features for a single-use need.
+- If a change starts to sprawl, shrink it back to the smallest verifiable diff.
+
+## 3. Evidence Before Patch
 
 - Performance optimization requires a warmed-up baseline and profiling evidence
   before code changes.
@@ -19,7 +28,7 @@ active user request and any tool-specific instructions.
   performance results.
 - Do not claim a gain without raw artifacts, metrics, and the exact workload.
 
-## 3. Keep Changes Surgical
+## 4. Keep Changes Surgical
 
 - Touch only files needed for the request.
 - Do not rewrite skill bodies into long essays. Keep `SKILL.md` procedural and
@@ -29,7 +38,7 @@ active user request and any tool-specific instructions.
 - Do not add local paths, private host names, internal IPs, private datasets, or
   secrets to committed files.
 
-## 4. Use the Right Entry Point
+## 5. Use the Right Entry Point
 
 - End-to-end performance goal: `xllm-npu-sota-loop`.
 - Service launch or evalscope collection: `xllm-npu-eval-runner`.
@@ -42,7 +51,7 @@ active user request and any tool-specific instructions.
 - Operator migration: `xllm-npu-op-migration`, then `kernel-pilot` only when
   profiling justifies kernel work.
 
-## 5. Validate and Record
+## 6. Validate and Record
 
 - Run repository tests after changing schemas, scripts, or skill structure.
 - For documentation-only edits, at least run markdown-sensitive hygiene checks

@@ -34,7 +34,8 @@ xLLM、vLLM-Ascend、SGLang NPU 后端共用的一套标准流程：统一 bench
 
 | 文档 | 位置 | 用途 |
 |------|------|------|
-| AGENTS.md | `./AGENTS.md` | AI 助手必读，含标准工作流与反模式 |
+| AGENTS.md | `./AGENTS.md` | Codex / opencode / 通用 agent 必读，含行为原则、标准工作流与反模式 |
+| CLAUDE.md | `./CLAUDE.md` | Claude Code 入口，通用原则需与 AGENTS.md 同步 |
 | 通用 NPU 标准流程 | `docs/npu-ai-infra-standard-workflow.md` | 多框架通用定位、Phase 定义、适配层原则 |
 | 实现路线图 | `docs/implementation-roadmap.md` | 仓库待补能力与阶段规划 |
 | 设计文档 | `docs/xllm-npu-optimization-design.md` | 仓库设计原理与 6-Phase 路线图 |

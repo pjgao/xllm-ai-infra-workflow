@@ -5,8 +5,9 @@ skill 集合。当前最完整的落地对象是京东 xLLM，但标准流程应
 xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 推理优化任务时，**必须遵循本仓库的 evidence-driven 闭环流程**。
 
-如果你是 Claude Code，也先读 [`CLAUDE.md`](CLAUDE.md)。如果你需要一个可直接
-复制的任务入口，先从 [`prompts/`](prompts/) 选择模板，再加载对应 skill。
+Codex、opencode 和其他支持 `AGENTS.md` 的 agent 必须直接遵守本文。Claude
+Code 还应读取 [`CLAUDE.md`](CLAUDE.md)，其内容与本文的通用行为原则保持一致。
+如果你需要一个可直接复制的任务入口，先从 [`prompts/`](prompts/) 选择模板，再加载对应 skill。
 
 ## 仓库定位
 
@@ -29,10 +30,25 @@ xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 8. **修改保持外科手术式**：只改本次任务需要的文件；发现无关问题时记录或提示，不顺手重构。
 9. **敏感信息不得入库**：不提交本机用户名、真实机器路径、内网 IP、私有数据集名、密钥、完整生产日志。
 
+## 通用 Agent 行为原则
+
+这些原则适用于 Codex、opencode、Claude Code 和其他 coding agent。它们来自
+Andrej Karpathy 风格的 agent guardrail，并已收敛成本仓库的执行约束。
+
+1. **先想清楚再动手**：实现前明确假设；如果多个解释会改变代码路径，先问清楚；发现更简单的做法要说明。
+2. **简单优先**：只实现用户要求和验证目标需要的内容；不为单次用途新增抽象；不添加未被要求的配置、兼容层或 speculative feature。
+3. **外科手术式修改**：只改与任务直接相关的行；匹配现有风格；不顺手重构、格式化或删除无关代码。
+4. **目标驱动执行**：把模糊任务转成可验证目标，例如复现坏例、跑指定 benchmark、通过 UT、达到目标 TPOT；循环直到验证完成或阻塞条件清晰。
+5. **暴露不确定性**：不要隐藏猜测；不能确认的数据、环境、提交、指标要标记为待验证。
+6. **验证结果说话**：修 bug 要有复现和修复后验证；做性能要有 warmup、baseline/current、profiling 解释和原始 artifact。
+7. **记录可复用经验**：每次踩坑、失败优化、review 修正和性能结论，都要沉淀到 run ledger、reference、case study 或 model PR history。
+
 ## 入口选择
 
 | 入口 | 适合场景 | 下一步 |
 |---|---|---|
+| `AGENTS.md` | Codex / opencode / 通用 agent 项目级规则 | 自动或手动加载后必须遵守 |
+| `CLAUDE.md` | Claude Code 项目级规则 | 与 `AGENTS.md` 的通用原则保持一致 |
 | `prompts/` | 需要启动一轮标准 agent 任务 | 复制模板，补齐模型/硬件/workload/run root |
 | `skills/*/SKILL.md` | 任务已明确属于某个能力 | 先读 skill，再按它的门禁执行 |
 | `model-pr-optimization-history/` | 开始新模型优化或 PR 风险分析 | 查询历史 PR、文件、符号和已知风险 |
