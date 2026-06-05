@@ -151,6 +151,19 @@ implementation path, integrate with xLLM, and validate the result. Use
 
 ## Typical Use
 
+### Start From a Prompt
+
+If you want an agent to start from a complete task instead of manually selecting
+each skill, copy a template from [`prompts/`](prompts/):
+
+| Prompt | Scenario |
+|---|---|
+| [`xllm-npu-sota-loop-prompts.md`](prompts/xllm-npu-sota-loop-prompts.md) | End-to-end performance optimization, decode-gap analysis, speculative accept-rate validation |
+| [`xllm-npu-pr-fix-prompts.md`](prompts/xllm-npu-pr-fix-prompts.md) | PR regression fixes, accuracy bugs, crashes, review replies |
+| [`xllm-npu-op-migration-prompts.md`](prompts/xllm-npu-op-migration-prompts.md) | NPU operator migration, operator optimization, kernel-pilot gates |
+
+Prompts start the task. Skills define the execution details and evidence gates.
+
 ### Choose the Entry Point
 
 | Task | Start With | Add When Needed |
@@ -233,6 +246,7 @@ instead.
 
 ```text
 skills/                         core agent skills
+prompts/                        copy-ready task prompts for agents
 references/                     global artifact schemas and code style
 tests/                          repository hygiene and schema smoke tests
 docs/                           design docs, case studies, roadmap
@@ -240,6 +254,7 @@ humanize/                       run-level ledger contract; concrete ledgers live
 model-pr-optimization-history/   model PR history knowledge base
 kernel-pilot/                   NPU kernel experiment helper
 patches/                        minimal patches or migration notes, no full-file snapshots
+CLAUDE.md                       Claude Code / generic coding-agent guardrails
 ```
 
 ## Environment

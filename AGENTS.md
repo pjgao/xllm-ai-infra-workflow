@@ -5,6 +5,9 @@ skill 集合。当前最完整的落地对象是京东 xLLM，但标准流程应
 xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 推理优化任务时，**必须遵循本仓库的 evidence-driven 闭环流程**。
 
+如果你是 Claude Code，也先读 [`CLAUDE.md`](CLAUDE.md)。如果你需要一个可直接
+复制的任务入口，先从 [`prompts/`](prompts/) 选择模板，再加载对应 skill。
+
 ## 仓库定位
 
 - 仓库目标：沉淀 NPU 大模型推理和 AI Infra 开发的证据驱动标准流程
@@ -23,6 +26,18 @@ xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 5. **经验不得丢失**：通用化时不得删除已有 xLLM/Qwen3.5/MTP 经验；失败实验、反例和环境信息也必须保留
 6. **启动与采集分离**：服务启动、性能压测、profiling 采集、精度评测必须有独立 artifact；profiling 脚本只 attach 已启动服务，不隐式启动 xLLM。
 7. **run 产物可复查**：build/deploy/perf/accuracy/profiling 每类 run 至少保存 manifest、raw log、结构化 metrics 和 report，避免只留下终端结论。
+8. **修改保持外科手术式**：只改本次任务需要的文件；发现无关问题时记录或提示，不顺手重构。
+9. **敏感信息不得入库**：不提交本机用户名、真实机器路径、内网 IP、私有数据集名、密钥、完整生产日志。
+
+## 入口选择
+
+| 入口 | 适合场景 | 下一步 |
+|---|---|---|
+| `prompts/` | 需要启动一轮标准 agent 任务 | 复制模板，补齐模型/硬件/workload/run root |
+| `skills/*/SKILL.md` | 任务已明确属于某个能力 | 先读 skill，再按它的门禁执行 |
+| `model-pr-optimization-history/` | 开始新模型优化或 PR 风险分析 | 查询历史 PR、文件、符号和已知风险 |
+| `references/` | 需要 artifact schema、代码风格或硬件信息 | 只加载本次任务需要的 reference |
+| `humanize/` | 需要沉淀优化账本格式 | 具体 ledger 写入 run root，不写回本目录 |
 
 ## Skills 总览
 
@@ -60,6 +75,17 @@ Phase 5     RLCR 迭代（xllm-npu-sota-loop）
   ├─ Research → Learn → Code → Review(code-review) → Validate → Record
   └─ 回到 Phase 2
 ```
+
+## RLCR 对应 Skill
+
+| 阶段 | 主要 skill | 产物 |
+|---|---|---|
+| Research | `xllm-npu-benchmark`、`xllm-npu-profiler`、`xllm-npu-pipeline-analysis`、`xllm-npu-capacity-planner`、`xllm-npu-accuracy-debug` | baseline、五表、空泡表、容量表、坏例 |
+| Learn | `model-pr-optimization-history` | 历史 PR 风险、相关文件、已有方案 |
+| Code | `xllm-npu-op-migration`、`kernel-pilot`、目标仓库本地 skills | 最小 patch、算子迁移契约、测试 |
+| Review | `xllm-npu-code-review`、目标仓库 `code-review` | 分级 review findings |
+| Validate | `xllm-npu-eval-runner`、`xllm-npu-benchmark`、`xllm-npu-profiler`、`xllm-npu-accuracy-debug`、`xllm-npu-incident-triage` | 编译/UT、性能、精度、profiling、事故复现 |
+| Record | `xllm-npu-sota-loop`、`humanize/`、`model-pr-optimization-history` | attempt ledger、optimization ledger、case study、模型历史 |
 
 ## 关键路径
 
@@ -133,6 +159,16 @@ python skills/xllm-npu-incident-triage/scripts/render_triage_npu.py \
 # 算子 benchmark
 python kernel-pilot/tools/npu-op-benchmark.py --op swiglu --shapes "128,4096" --dtype float16
 ```
+
+## Prompt 模板
+
+根目录 [`prompts/`](prompts/) 保存可直接交给 agent 的任务模板：
+
+- `xllm-npu-sota-loop-prompts.md`：端到端性能优化、decode gap、投机接受率验证。
+- `xllm-npu-pr-fix-prompts.md`：PR 精度/性能/事故回归修复、review 回复。
+- `xllm-npu-op-migration-prompts.md`：torch_npu / Triton-Ascend / AscendC / ATB 算子迁移。
+
+Prompt 只负责启动任务；真正的步骤和门禁以对应 skill 为准。
 
 ## xLLM 启动模板（A3）
 
@@ -219,3 +255,4 @@ python test/test_xllm_serve_generation.py --model /models/<MODEL> --device npu
 - ❌ 多个 patch 一起上、不单独验证
 - ❌ 修了 bug 但不更新 incident 台账
 - ❌ 为了通用化重写文档时删掉已有 xLLM/MTP 实测经验
+- ❌ 把参考仓库、外部 prompt 或本地日志原文直接搬进本仓库

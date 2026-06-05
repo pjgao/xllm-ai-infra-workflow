@@ -197,6 +197,17 @@ Validate: 重新编译 + benchmark + profiling
 Record:   记录到台账
 ```
 
+### RLCR skill 路由
+
+| 阶段 | 优先加载 | 用途 |
+|------|----------|------|
+| Research | `xllm-npu-benchmark`、`xllm-npu-profiler`、`xllm-npu-pipeline-analysis`、`xllm-npu-capacity-planner`、`xllm-npu-compute-simulation`、`xllm-npu-accuracy-debug` | 建立 baseline、五表、空泡、容量、理论下界和坏例证据 |
+| Learn | `model-pr-optimization-history` | 查询模型历史、相关 PR、风险文件和失败经验 |
+| Code | `xllm-npu-op-migration`、`kernel-pilot`、目标 xLLM 仓库本地 skills | 实现单一可验证 patch、算子迁移或 kernel 试验 |
+| Review | `xllm-npu-code-review`、目标 xLLM 仓库 `code-review` | 做 NPU 专项 review 和目标仓库规则检查 |
+| Validate | `xllm-npu-eval-runner`、`xllm-npu-benchmark`、`xllm-npu-profiler`、`xllm-npu-accuracy-debug`、`xllm-npu-incident-triage` | 编译/UT、性能、精度、profiling 和事故回放验证 |
+| Record | `xllm-npu-sota-loop`、`humanize/`、`model-pr-optimization-history` | 写 attempt ledger、optimization ledger、case study 和模型历史 |
+
 ### 台账文件
 
 | 文件 | 说明 |
