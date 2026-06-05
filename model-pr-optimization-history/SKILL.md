@@ -70,7 +70,7 @@ python model-pr-optimization-history/scripts/query.py \
 
 - `model-pr-optimization-history/xllm/deepseek-v3.md` — DeepSeek-V3 (MoE)
 - `model-pr-optimization-history/xllm/qwen3-core.md` — Qwen3 系列 (Dense)
-- `model-pr-optimization-history/xllm/qwen35-mtp.md` — Qwen3.5 MTP / graph / sampling
+- `model-pr-optimization-history/xllm/qwen35-mtp.md` — Qwen3.5 / Qwen3 Next / Qwen3.6 / MTP / graph / VLM / PD
 - `model-pr-optimization-history/xllm/glm-5.md` — GLM-5 系列
 
 ## 维护
