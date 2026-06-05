@@ -121,6 +121,16 @@ Research -> Learn -> Code -> Review -> Validate -> Record
 - Validate: build, UT, accuracy, performance, and profiling when needed.
 - Record: update humanize ledgers and case studies.
 
+### 6. Operator Migration Flow
+
+When profiling proves that the bottleneck is in post-processing, cache,
+attention, MoE, or Mamba/SSM operators, use `xllm-npu-op-migration` first to
+inventory source operators, align interfaces and shapes, choose the
+implementation path, integrate with xLLM, and validate the result. Use
+`kernel-pilot` afterward only when a lower-level kernel experiment is needed.
+
+![xLLM Operator Migration Flow](docs/assets/xllm-op-migration-flow.png)
+
 ## Skills
 
 | Skill | Use When | Main Artifacts |
@@ -135,6 +145,7 @@ Research -> Learn -> Code -> Review -> Validate -> Record
 | [`xllm-npu-incident-triage`](skills/xllm-npu-incident-triage/SKILL.md) | Triage crash, OOM, HCCL, graph, PagedAttention incidents | incident bundle, replay report |
 | [`xllm-npu-code-review`](skills/xllm-npu-code-review/SKILL.md) | Review NPU-related changes before PR submission | prioritized review findings |
 | [`xllm-npu-sota-loop`](skills/xllm-npu-sota-loop/SKILL.md) | Iterate until a target performance goal is reached | run manifest, RLCR ledger, final summary |
+| [`xllm-npu-op-migration`](skills/xllm-npu-op-migration/SKILL.md) | Migrate PyTorch/torch_npu, Triton-Ascend, AscendC, or ATB custom operators into xLLM | migration report, interface contract, validation table |
 | [`model-pr-optimization-history`](model-pr-optimization-history/SKILL.md) | Query historical work before optimizing a model | model dossier, risk notes |
 | [`kernel-pilot`](kernel-pilot/SKILL.md) | Try kernel-level optimization after existing paths are exhausted | op benchmark, kernel notes |
 
@@ -150,6 +161,7 @@ Research -> Learn -> Code -> Review -> Validate -> Record
 | Explain OOM, KV cache, or serving capacity | `xllm-npu-capacity-planner` | Add `xllm-npu-incident-triage` for crashes |
 | Debug garbled output or CEval regression | `xllm-npu-accuracy-debug` | Use bisect when the commit range is unclear |
 | Prepare an xLLM NPU PR | `xllm-npu-code-review` | Also check the target repo's own `.agents/skills` |
+| Migrate external or experimental NPU operators | `xllm-npu-op-migration` | Use `kernel-pilot` when a new kernel is needed |
 | Try kernel-level optimization | `kernel-pilot` | First prove with profiling that the kernel is the bottleneck |
 
 ### Run xLLM Performance and Accuracy

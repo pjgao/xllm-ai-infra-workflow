@@ -113,6 +113,15 @@ Research → Learn → Code → Review → Validate → Record
 - Validate：编译、UT、精度、性能、profiling。
 - Record：写 humanize ledger 和 case study。
 
+### 6. 算子迁移流程
+
+当 profiling 证明瓶颈落在后处理、cache、attention、MoE 或 Mamba/SSM
+算子上时，先用 `xllm-npu-op-migration` 做源算子盘点、接口与 shape
+对齐、实现路径选择、xLLM 接入和验证闭环，再决定是否进入 `kernel-pilot`
+做更底层的 kernel 调优。
+
+![xLLM 算子迁移流程](docs/assets/xllm-op-migration-flow.png)
+
 ## Skills
 
 | Skill | 何时使用 | 主要产物 |
@@ -127,6 +136,7 @@ Research → Learn → Code → Review → Validate → Record
 | [`xllm-npu-incident-triage`](skills/xllm-npu-incident-triage/SKILL.md) | crash、OOM、HCCL、graph、PagedAttention 事故 | incident bundle、replay report |
 | [`xllm-npu-code-review`](skills/xllm-npu-code-review/SKILL.md) | 提交 NPU 相关代码前审查 | 分级 review findings |
 | [`xllm-npu-sota-loop`](skills/xllm-npu-sota-loop/SKILL.md) | 持续优化直到达到目标收益 | run manifest、RLCR ledger、final summary |
+| [`xllm-npu-op-migration`](skills/xllm-npu-op-migration/SKILL.md) | 迁移 PyTorch/torch_npu、Triton-Ascend、AscendC 或 ATB 自定义算子到 xLLM | migration report、接口契约、验证表 |
 | [`model-pr-optimization-history`](model-pr-optimization-history/SKILL.md) | 开始新模型优化前查历史 | model dossier、risk notes |
 | [`kernel-pilot`](kernel-pilot/SKILL.md) | 现有路径用尽后做 kernel 试验 | op benchmark、kernel notes |
 
@@ -142,6 +152,7 @@ Research → Learn → Code → Review → Validate → Record
 | 判断 OOM、KV cache、并发容量 | `xllm-npu-capacity-planner` | crash 时补 `xllm-npu-incident-triage` |
 | 输出乱码、CEval 掉分 | `xllm-npu-accuracy-debug` | commit 范围不清楚时启动 bisect |
 | 提交 xLLM NPU PR 前 | `xllm-npu-code-review` | 再查目标仓库自己的 `.agents/skills` |
+| 迁移外部或实验性 NPU 算子 | `xllm-npu-op-migration` | 需要重新写 kernel 时再用 `kernel-pilot` |
 | 现有路径用尽，需要算子实验 | `kernel-pilot` | 先确认 profiling 已证明 kernel 是瓶颈 |
 
 ### 跑一次 xLLM 性能和精度评测
