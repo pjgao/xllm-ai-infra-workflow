@@ -2,7 +2,7 @@
 
 [English](README.en.md)
 
-面向昇腾 NPU 大模型推理优化的 Agent-ready skill 仓库。它以
+面向昇腾 NPU 大模型推理优化的 Agent-ready workflow 仓库。它以
 [xLLM](https://github.com/jd-opensource/xllm) 为首个完整落地框架，同时把
 [vLLM-Ascend](https://github.com/vllm-project/vllm-ascend) 和 SGLang NPU
 作为公平对照、经验迁移和后续扩展目标。

@@ -2,7 +2,7 @@
 
 [中文](README.md)
 
-Agent-ready skills for large-model serving optimization on Ascend NPUs. The
+An agent-ready workflow for large-model serving optimization on Ascend NPUs. The
 first fully recorded landing target is
 [xLLM](https://github.com/jd-opensource/xllm), while
 [vLLM-Ascend](https://github.com/vllm-project/vllm-ascend) and SGLang NPU are
