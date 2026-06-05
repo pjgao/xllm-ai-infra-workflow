@@ -215,7 +215,7 @@ skills/                         核心 Agent skills
 references/                     全局 artifact schema 和代码风格
 tests/                          仓库卫生和 schema 最小测试
 docs/                           设计文档、case study、路线图
-humanize/                       优化账本和 lineage
+humanize/                       run-level 优化账本契约，具体台账写入每次 run root
 model-pr-optimization-history/   模型 PR 历史知识库
 kernel-pilot/                   NPU kernel 试验辅助
 patches/                        最小 patch 或历史迁移说明，不保存整文件快照

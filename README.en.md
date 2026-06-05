@@ -224,7 +224,7 @@ skills/                         core agent skills
 references/                     global artifact schemas and code style
 tests/                          repository hygiene and schema smoke tests
 docs/                           design docs, case studies, roadmap
-humanize/                       optimization ledgers and lineage
+humanize/                       run-level ledger contract; concrete ledgers live under each run root
 model-pr-optimization-history/   model PR history knowledge base
 kernel-pilot/                   NPU kernel experiment helper
 patches/                        minimal patches or migration notes, no full-file snapshots

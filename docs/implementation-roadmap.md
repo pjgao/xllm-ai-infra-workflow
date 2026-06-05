@@ -186,7 +186,9 @@ reserved linear bytes、KV blocks、HBM budget 和 OOM 风险解释。
 
 ### 2.8 Humanize / Goal：补真正的 run-level orchestrator
 
-当前有 `humanize/attempt-ledger.md`、`optimization-ledger.md`、`lineage.jsonl`，但多为手写账本。
+当前已保留 `humanize/README.md` 作为 run-level ledger 契约；具体
+`attempt-ledger.md`、`optimization-ledger.md`、`lineage.jsonl` 应写入每次
+run root，避免根目录长期积累过期实验路径。
 
 缺口：
 
