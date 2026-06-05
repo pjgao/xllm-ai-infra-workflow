@@ -29,42 +29,24 @@ PR 优化时，都能按统一证据标准闭环执行。
 
 ## 架构
 
-仓库按三层组织：
+![Evidence-Driven NPU AI Infra Workflow](docs/assets/npu-ai-infra-workflow.png)
+
+仓库按“执行闭环 + 证据库”组织，而不是按单次优化笔记堆放：
+
+| 层级 | 入口 | 职责 |
+|---|---|---|
+| Orchestrator 编排层 | `xllm-npu-sota-loop` | 串联 Research、Learn、Code、Review、Validate、Record，驱动端到端优化 |
+| Execution 执行层 | `xllm-npu-eval-runner` | 启动或复用服务，执行 evalscope 性能/精度评测，收集原始产物 |
+| Analysis 分析层 | benchmark / profiler / pipeline / capacity / compute / accuracy / incident / code-review | 把性能、精度、profiling、容量、事故和代码风险拆成可验证证据 |
+| Supporting Knowledge 知识层 | `model-pr-optimization-history`、`kernel-pilot`、`references/`、`humanize/` | 保存历史 PR、算子实验、artifact schema、优化账本和 lineage |
+
+一轮正式优化必须沿着这条证据流闭环：
 
 ```text
-Orchestrator 编排层
-  xllm-npu-sota-loop
-    串联 benchmark、profiling、code review、accuracy、incident 和记录。
-
-Execution 执行层
-  xllm-npu-eval-runner
-    启动/复用 xLLM 服务，执行 evalscope 性能和精度评测，收集原始产物。
-
-Analysis 分析层
-  xllm-npu-benchmark
-    公平基准测试、warmup、环境门禁、baseline/current 对比。
-  xllm-npu-profiler
-    昇腾 msprof 采集、五表报告、hostbound/timeline 分析。
-  xllm-npu-pipeline-analysis
-    prefill/decode 边界、layer timing、rank skew 和 decode 空泡分析。
-  xllm-npu-capacity-planner
-    HBM、KV cache、MTP reserve、block capacity 和并发容量解释。
-  xllm-npu-compute-simulation
-    FLOPs、MFU、kernel 理论下界和 TP/MTP what-if 估算。
-  xllm-npu-accuracy-debug
-    精度异常最小复现、A/B、坏例分析、commit 二分。
-  xllm-npu-incident-triage
-    crash、OOM、HCCL、PagedAttention、graph 等事故 replay-first 排障。
-  xllm-npu-code-review
-    NPU 图模式、KV cache、通信、算子、MTP 等专项代码审查。
+Target → Baseline → Profiling → Patch → Accuracy → Performance → Record
 ```
 
-辅助层：
-
-- `model-pr-optimization-history`：按模型查询历史 PR、已知风险和优化经验。
-- `kernel-pilot`：TileLang / AscendC / Triton-Ascend 算子验证和优化辅助。
-- `references/`：统一 run manifest、性能/精度/profiling artifact schema。
-- `humanize/`：尝试记录、有效优化、思路来源和 lineage。
+其中 baseline/current 性能必须带 warmup；profiling run 只用于解释瓶颈，不直接当正式性能结论。
 
 ## 核心方案
 
@@ -150,6 +132,18 @@ Research → Learn → Code → Review → Validate → Record
 
 ## 典型使用
 
+### 选择入口
+
+| 任务 | 先用哪个 skill | 何时补充 |
+|---|---|---|
+| 跑服务、性能或精度评测 | `xllm-npu-eval-runner` | 需要跨框架公平对比时再用 `xllm-npu-benchmark` |
+| 优化 TPOT / TTFT / TPS | `xllm-npu-sota-loop` | Phase 3 必须接 `xllm-npu-profiler` |
+| 分析 decode 空泡或 rank 差异 | `xllm-npu-pipeline-analysis` | 需要理论上限时补 `xllm-npu-compute-simulation` |
+| 判断 OOM、KV cache、并发容量 | `xllm-npu-capacity-planner` | crash 时补 `xllm-npu-incident-triage` |
+| 输出乱码、CEval 掉分 | `xllm-npu-accuracy-debug` | commit 范围不清楚时启动 bisect |
+| 提交 xLLM NPU PR 前 | `xllm-npu-code-review` | 再查目标仓库自己的 `.agents/skills` |
+| 现有路径用尽，需要算子实验 | `kernel-pilot` | 先确认 profiling 已证明 kernel 是瓶颈 |
+
 ### 跑一次 xLLM 性能和精度评测
 
 ```text
@@ -190,6 +184,7 @@ Research → Learn → Code → Review → Validate → Record
 ```text
 使用 xllm-npu-sota-loop：
 Phase 0 记录环境和目标；
+Phase 0.5 查询 model-pr-optimization-history；
 Phase 1 建立公平基线；
 Phase 3 采集 profiling；
 Phase 5 每轮只提交一个 patch；

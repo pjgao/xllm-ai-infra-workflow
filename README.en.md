@@ -32,43 +32,26 @@ target -> baseline -> profiling -> patch -> accuracy -> performance -> record
 
 ## Architecture
 
-The repository is organized into three layers:
+![Evidence-Driven NPU AI Infra Workflow](docs/assets/npu-ai-infra-workflow.png)
+
+The repository is organized around an execution loop and reusable evidence
+stores, not around one-off tuning notes:
+
+| Layer | Entry Point | Responsibility |
+|---|---|---|
+| Orchestrator | `xllm-npu-sota-loop` | Coordinates Research, Learn, Code, Review, Validate, and Record |
+| Execution | `xllm-npu-eval-runner` | Starts or reuses services, runs evalscope perf/accuracy jobs, and collects raw artifacts |
+| Analysis | benchmark / profiler / pipeline / capacity / compute / accuracy / incident / code-review | Turns performance, accuracy, profiling, capacity, incident, and code risks into verifiable evidence |
+| Supporting Knowledge | `model-pr-optimization-history`, `kernel-pilot`, `references/`, `humanize/` | Stores historical PRs, kernel experiments, artifact schemas, optimization ledgers, and lineage |
+
+A formal optimization should follow this evidence flow:
 
 ```text
-Orchestrator
-  xllm-npu-sota-loop
-    Coordinates benchmark, profiling, review, accuracy, incident, and records.
-
-Execution
-  xllm-npu-eval-runner
-    Starts or reuses an xLLM service, runs evalscope, and collects raw artifacts.
-
-Analysis
-  xllm-npu-benchmark
-    Fair benchmark comparison, warmup, environment gates, baseline/current diff.
-  xllm-npu-profiler
-    Ascend msprof collection, five-table reports, hostbound and timeline analysis.
-  xllm-npu-pipeline-analysis
-    Prefill/decode boundaries, layer timing, rank skew, and decode bubbles.
-  xllm-npu-capacity-planner
-    HBM, KV cache, MTP reserve, block capacity, and concurrency planning.
-  xllm-npu-compute-simulation
-    FLOPs, MFU, theoretical lower bounds, and TP/MTP what-if estimates.
-  xllm-npu-accuracy-debug
-    Minimal reproduction, A/B, bad cases, and commit bisect for accuracy issues.
-  xllm-npu-incident-triage
-    Replay-first triage for crash, OOM, HCCL, PagedAttention, graph issues.
-  xllm-npu-code-review
-    NPU-specific review for graph mode, KV cache, communication, kernels, MTP.
+Target -> Baseline -> Profiling -> Patch -> Accuracy -> Performance -> Record
 ```
 
-Supporting layers:
-
-- `model-pr-optimization-history`: model-level PR history, known risks, and
-  prior optimization notes.
-- `kernel-pilot`: TileLang / AscendC / Triton-Ascend kernel experiments.
-- `references/`: run manifest and perf/accuracy/profiling artifact schemas.
-- `humanize/`: attempt ledger, optimization ledger, idea sources, and lineage.
+Baseline/current performance runs must use warmup. Profiling runs explain
+bottlenecks; they are not formal performance measurements.
 
 ## Core Approach
 
@@ -157,6 +140,18 @@ Research -> Learn -> Code -> Review -> Validate -> Record
 
 ## Typical Use
 
+### Choose the Entry Point
+
+| Task | Start With | Add When Needed |
+|---|---|---|
+| Run service, performance, or accuracy evaluation | `xllm-npu-eval-runner` | Use `xllm-npu-benchmark` for fair cross-framework comparison |
+| Optimize TPOT / TTFT / TPS | `xllm-npu-sota-loop` | Phase 3 must use `xllm-npu-profiler` |
+| Analyze decode bubbles or rank skew | `xllm-npu-pipeline-analysis` | Add `xllm-npu-compute-simulation` for hardware lower bounds |
+| Explain OOM, KV cache, or serving capacity | `xllm-npu-capacity-planner` | Add `xllm-npu-incident-triage` for crashes |
+| Debug garbled output or CEval regression | `xllm-npu-accuracy-debug` | Use bisect when the commit range is unclear |
+| Prepare an xLLM NPU PR | `xllm-npu-code-review` | Also check the target repo's own `.agents/skills` |
+| Try kernel-level optimization | `kernel-pilot` | First prove with profiling that the kernel is the bottleneck |
+
 ### Run xLLM Performance and Accuracy
 
 ```text
@@ -197,6 +192,7 @@ and use git bisect if the introducing commit is unknown.
 ```text
 Use xllm-npu-sota-loop:
 Phase 0 records the environment and target.
+Phase 0.5 queries model-pr-optimization-history.
 Phase 1 establishes a fair baseline.
 Phase 3 collects profiling evidence.
 Phase 5 applies one patch per round.
