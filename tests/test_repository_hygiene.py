@@ -37,8 +37,12 @@ def test_no_public_readme_forbidden_source_reference():
 
 def test_no_obvious_local_or_credential_strings():
     patterns = [
-        "/home/" + "g00510989",
-        "/home/" + "gao" + "pengju",
+        r"/home/[A-Za-z][A-Za-z0-9._-]*",
+        r"\b[a-z][0-9]{8}\b",
+        r"\b[a-z]+pengju\b",
+        r"\b[a-z]+pengju[0-9]*\b",
+        r"SSH config:\s*`?\d+`?",
+        r"\bhost\s*[:=]\s*\d+\b",
         r"192\.168\.",
         "xllm" + "-gpj",
         "jd" + "_openai_20k",
@@ -48,3 +52,7 @@ def test_no_obvious_local_or_credential_strings():
     combined = "\n".join(p.read_text(encoding="utf-8", errors="ignore") for p in text_files())
     for pattern in patterns:
         assert not re.search(pattern, combined), pattern
+
+    allowed_ips = {"0.0.0.0", "127.0.0.1"}
+    for match in re.finditer(r"\b\d{1,3}(?:\.\d{1,3}){3}\b", combined):
+        assert match.group(0) in allowed_ips, match.group(0)

@@ -1,7 +1,7 @@
 # xLLM NPU 优化关键环境信息（必须记住）
 
 ## 1. 远程机器
-- **主机**: 154（SSH config: `154`，IP: <host-ip>）
+- **主机**: `<ssh-host-alias>`（IP 不写入仓库）
 - **容器**: `<container-name>`（Docker 容器名）
 - **代码目录**: `<workspace>/xllm`
 - **启动脚本**: `<workspace>/xllm.sh`
@@ -13,8 +13,8 @@
 ## 3. 网络代理
 git 操作失败时需设置：
 ```bash
-export http_proxy=http://127.0.0.1:6789
-export https_proxy=http://127.0.0.1:6789
+export http_proxy=http://<proxy-host>:<proxy-port>
+export https_proxy=http://<proxy-host>:<proxy-port>
 ```
 
 ## 4. 历史优化数据目录

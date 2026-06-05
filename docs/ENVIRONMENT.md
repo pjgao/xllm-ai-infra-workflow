@@ -1,7 +1,7 @@
 # xLLM NPU 优化环境关键信息
 
 ## 远程机器
-- **机器**: 154（具体 IP 见 SSH config 或 `.ssh/config`）
+- **机器**: `<ssh-host-alias>`（具体 IP 不写入仓库）
 - **容器名**: `<container-name>`
 - **代码目录**: `<workspace>/xllm`
 - **启动脚本**: `<workspace>/xllm.sh`
@@ -21,8 +21,8 @@
 
 ## 网络代理（git 失败时使用）
 ```bash
-export http_proxy=http://127.0.0.1:6789
-export https_proxy=http://127.0.0.1:6789
+export http_proxy=http://<proxy-host>:<proxy-port>
+export https_proxy=http://<proxy-host>:<proxy-port>
 ```
 
 ## 当前 PR
