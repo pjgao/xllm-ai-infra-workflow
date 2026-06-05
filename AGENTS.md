@@ -1,6 +1,6 @@
 # Agent 使用指南
 
-本仓库是面向华为昇腾 NPU 910B3 (A3) 的大模型推理与 AI Infra 开发
+本仓库是面向华为昇腾 NPU 910B3 (A3) / 910B (A2) 的大模型推理与 AI Infra 开发
 skill 集合。当前最完整的落地对象是京东 xLLM，但标准流程应服务于
 xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 推理优化任务时，**必须遵循本仓库的 evidence-driven 闭环流程**。
@@ -11,7 +11,7 @@ xLLM、vLLM-Ascend、SGLang NPU 后端等多框架。Agent 在协助任何 NPU
 - 框架范围：xLLM、vLLM-Ascend、SGLang NPU 后端
 - 对照原则：按任务选择对照框架；默认优先做 xLLM vs vLLM-Ascend，也允许扩展到 SGLang NPU
 - 目标模型：NPU serving 上的主流推理模型（Qwen3 / DeepSeek-V3 / GLM-5 / Llama / Kimi 等）
-- 目标硬件：昇腾 910B3 (A3)，HDK Driver 25.2.0+，CANN 8.0.RC1+
+- 目标硬件：昇腾 910B3 (A3) / 910B (A2)，HDK Driver 25.2.0+，CANN 8.0.RC1+
 - 当前经验底座：xLLM + Qwen3.5-27B + MTP 的真实 benchmark、profiling、patch、事故记录
 
 ## 核心原则（必须遵守）

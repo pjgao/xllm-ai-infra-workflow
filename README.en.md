@@ -232,7 +232,7 @@ patches/                        minimal patches or migration notes, no full-file
 
 ## Environment
 
-- Huawei Ascend 910B3 / A3 NPU
+- Huawei Ascend 910B3 / A3 NPU, with compatibility notes for Ascend 910B / A2
 - CANN / HDK Driver compatible with the target framework
 - At least one OpenAI-compatible serving framework: xLLM, vLLM-Ascend, or SGLang NPU
 - evalscope and msprof / MindStudio profiling tools are recommended

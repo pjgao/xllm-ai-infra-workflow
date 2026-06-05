@@ -26,10 +26,10 @@ kernel-pilot 仅在以下条件启动：
 ```
 if kernel 属于已有 torch_npu 融合算子:
     → 转 benchmark 层验证，不开 kernel-pilot
-elif kernel 属于已有 TileLang 算子 (xllm/ops/*.py):
-    → 转 kernel-pilot 的 "TileLang 调优" 路径
+elif kernel 属于已有 PyTorch / torch_npu / Triton-Ascend / TileLang 算子:
+    → 转 kernel-pilot 的对应调优路径
 elif kernel 是全新算子:
-    → 选择实现路径: TileLang (首选) / AscendC (复杂控制流)
+    → 选择实现路径: PyTorch/torch_npu / Triton-Ascend / TileLang / AscendC
 ```
 
 **输出**：`op_name`，`op_type`，目标加速比，实现路径选择
@@ -48,7 +48,8 @@ elif kernel 是全新算子:
 
 #### 2.2 Tiling 策略
 
-基于 A3 规格（参考 `references/a3-specs.md`）：
+基于目标硬件规格（A3 参考 `references/a3-specs.md`，A2/910B 参考
+`references/a2-910b-specs.md`）：
 
 | 资源 | 规格 |
 |------|------|
@@ -64,12 +65,16 @@ Tiling 原则：
 
 ### Step 3: 实现
 
-根据选择的路径，参考知识库：
+根据选择的路径，参考 knowledge 和 references：
 
+- **PyTorch / torch_npu**: 参考 `kernel-pilot/knowledge/pytorch-torchnpu-patterns.md`
+- **Triton-Ascend**: 参考 `kernel-pilot/knowledge/triton-ascend-patterns.md`
 - **TileLang**: 参考 `kernel-pilot/knowledge/tilelang-patterns.md`
 - **AscendC**: 参考 `kernel-pilot/knowledge/ascendc-patterns.md`
 
 写入位置：
+- PyTorch / torch_npu: xLLM NPU model/layer path 或 `xllm/core/layers/npu_torch/`
+- Triton-Ascend: `third_party/torch_npu_ops/triton_npu/` 或框架已有 Triton-Ascend 扩展路径
 - TileLang: `xllm/ops/npu/<op_name>.py` 或 `xllm/compiler/tilelang/`
 - AscendC: `third_party/kernel-coding/ascendc/<op_name>/` 或 xLLM C++ 路径
 
@@ -173,10 +178,20 @@ kernel-pilot 完成后输出：
 - 与 reference 对齐: [Pass | Fail]
 ```
 
-## 知识库
+## Knowledge and References
 
+`knowledge/` 放实现模式、cookbook 片段和调优经验，会随项目经验持续演进：
+
+- `kernel-pilot/knowledge/pytorch-torchnpu-patterns.md` — PyTorch / torch_npu 组合算子与替换模式
+- `kernel-pilot/knowledge/triton-ascend-patterns.md` — Triton-Ascend kernel 常用模式
 - `kernel-pilot/knowledge/tilelang-patterns.md` — TileLang DSL 常用模式
 - `kernel-pilot/knowledge/ascendc-patterns.md` — AscendC C++ 常用模式
+
+`references/` 放硬件事实、稳定约束和 source-of-truth 规格，应只在目标平台或
+支持范围变化时更新：
+
+- `kernel-pilot/references/a3-specs.md` — Ascend 910B3 / A3 规格
+- `kernel-pilot/references/a2-910b-specs.md` — Ascend 910B / A2 规格
 
 ## 与 xllm-npu-sota-loop 的关系
 
