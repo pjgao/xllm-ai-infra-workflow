@@ -47,7 +47,8 @@ For formal conclusions, hand the artifacts to `xllm-npu-benchmark` or
 
 ## Step 1: Parameter Alignment
 
-Before doing anything, use the Question tool to confirm these parameters with the user:
+Before doing anything, confirm these parameters with the user when they are not
+already available from the current script, run manifest, or service endpoint:
 
 | Parameter | Description | Affects |
 |---|---|---|
@@ -60,7 +61,7 @@ Before doing anything, use the Question tool to confirm these parameters with th
 | **NPU Devices** | NPU device IDs to use (e.g. `0,1,2,3`) | `run.sh` `ASCEND_RT_VISIBLE_DEVICES` variable |
 | **Test Mode** | Smoke test (quick validation) or Full test | `eval_perf.sh` (skip parallel=5), `eval_acc.sh` (subset datasets) |
 
-Ask all parameters in one batch. Provide sensible defaults based on current script values:
+Ask missing parameters in one batch. Provide sensible defaults based on current script values:
 - API URL: `http://localhost:18050/v1`
 - Model Name: `Qwen35-27B`
 - Model Path: `<model-root>/Qwen35-27B`
@@ -74,15 +75,20 @@ Ask all parameters in one batch. Provide sensible defaults based on current scri
 
 After collecting parameters, update all 3 scripts **atomically** (all at once).
 
-### Script Locations (relative to project root)
+### Script Locations
 
-- **Startup**: `.opencode/skills/xllm-npu-eval-runner/scripts/run.sh`
-- **Performance**: `.opencode/skills/xllm-npu-eval-runner/scripts/eval_perf.sh`
-- **Accuracy**: `.opencode/skills/xllm-npu-eval-runner/scripts/eval_acc.sh`
+Resolve script paths relative to this skill directory, regardless of whether the
+skill was installed for Codex, Claude Code, opencode, or loaded directly from a
+repository checkout.
+
+- **Startup**: `scripts/run.sh`
+- **Performance**: `scripts/eval_perf.sh`
+- **Accuracy**: `scripts/eval_acc.sh`
 
 ### run.sh Updates
 
-Use the Edit tool to update these fields in `scripts/run.sh`:
+Use the current agent's normal file editing mechanism to update these fields in
+`scripts/run.sh`:
 
 1. `MODEL_PATH="<model_path>"`
 2. `DRAFT_MODEL_PATH="<draft_model_path>"`
@@ -161,7 +167,7 @@ if curl -s <api_url>/models > /dev/null 2>&1; then
   echo "xLLM service already running, skipping startup."
 else
   echo "Starting xLLM service..."
-  bash .opencode/skills/xllm-npu-eval-runner/scripts/run.sh
+  bash <skill_dir>/scripts/run.sh
 fi
 ```
 
@@ -189,7 +195,7 @@ If the service doesn't start within 10 minutes, check `log/node_0.log` for error
 ## Step 7: Run Performance Test
 
 ```bash
-bash .opencode/skills/xllm-npu-eval-runner/scripts/eval_perf.sh
+bash <skill_dir>/scripts/eval_perf.sh
 ```
 
 The performance test behavior depends on Test Mode:
@@ -210,10 +216,11 @@ latency. Record the warmup value in `manifest.md` and `metrics.json`.
 ## Step 8: Run Accuracy Test
 
 ```bash
-bash .opencode/skills/xllm-npu-eval-runner/scripts/eval_acc.sh
+bash <skill_dir>/scripts/eval_acc.sh
 ```
 
-**Important**: Use Bash tool with `timeout: 3600000` (1 hour) when executing this command. Accuracy evaluation takes significantly longer than performance tests.
+**Important**: Run accuracy evaluation with a long timeout, for example 1 hour.
+Accuracy evaluation takes significantly longer than performance tests.
 
 Accuracy results are printed to stdout. For formal runs, save raw predictions,
 failed cases, score files, and a short `report.md` under `$RUN_ROOT/accuracy/`.
@@ -246,7 +253,9 @@ Fetch the benchmark baseline data from the GitHub repository:
 BENCHMARK_URL=https://raw.githubusercontent.com/jd-opensource/xllm/main/docs/benchmark/baseline.md
 ```
 
-Use the WebFetch tool to retrieve this URL. If the URL returns a 404, inform the user that the baseline file hasn't been uploaded yet and skip the comparison step.
+Fetch this URL with the current agent's available web or shell network tool. If
+the URL returns a 404, inform the user that the baseline file has not been
+uploaded yet and skip the comparison step.
 
 Parse the markdown tables to extract baseline values for the matching model and configuration.
 

@@ -15,12 +15,32 @@ def text_files():
 
 
 def test_skill_frontmatter_has_name_and_description():
-    for skill in ROOT.glob("skills/*/SKILL.md"):
+    skill_files = list(ROOT.glob("skills/*/SKILL.md")) + [
+        ROOT / "kernel-pilot/SKILL.md",
+        ROOT / "model-pr-optimization-history/SKILL.md",
+    ]
+    for skill in skill_files:
         text = skill.read_text(encoding="utf-8")
         assert text.startswith("---\n"), skill
         header = text.split("---", 2)[1]
         assert re.search(r"^name:\s*\S+", header, re.M), skill
         assert re.search(r"^description:\s*.+", header, re.M), skill
+
+
+def test_skills_do_not_hardcode_single_agent_install_paths():
+    forbidden = [
+        ".opencode/skills/",
+        "$CODEX_HOME/skills/",
+        "~/.claude/skills/",
+    ]
+    skill_files = list(ROOT.glob("skills/*/SKILL.md")) + [
+        ROOT / "kernel-pilot/SKILL.md",
+        ROOT / "model-pr-optimization-history/SKILL.md",
+    ]
+    for skill in skill_files:
+        text = skill.read_text(encoding="utf-8")
+        for item in forbidden:
+            assert item not in text, f"{item} found in {skill}"
 
 
 def test_no_public_readme_forbidden_source_reference():

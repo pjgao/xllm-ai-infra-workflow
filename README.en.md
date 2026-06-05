@@ -237,11 +237,15 @@ mirrors them in `CLAUDE.md`; update both when changing agent behavior.
 Symlinks are recommended so `git pull` updates skills automatically:
 
 ```bash
+export AGENT_SKILL_DIR="${CODEX_HOME:-$HOME/.codex}/skills"   # Codex example
+# export AGENT_SKILL_DIR="$HOME/.claude/skills"               # Common Claude Code / opencode example
+
+mkdir -p "$AGENT_SKILL_DIR"
 for skill_dir in skills/xllm-npu-*; do
-  ln -sfn "$(pwd)/$skill_dir" "$CODEX_HOME/skills/$(basename "$skill_dir")"
+  ln -sfn "$(pwd)/$skill_dir" "$AGENT_SKILL_DIR/$(basename "$skill_dir")"
 done
-ln -sfn "$(pwd)/kernel-pilot" "$CODEX_HOME/skills/xllm-npu-kernel-pilot"
-ln -sfn "$(pwd)/model-pr-optimization-history" "$CODEX_HOME/skills/model-pr-optimization-history"
+ln -sfn "$(pwd)/kernel-pilot" "$AGENT_SKILL_DIR/xllm-npu-kernel-pilot"
+ln -sfn "$(pwd)/model-pr-optimization-history" "$AGENT_SKILL_DIR/model-pr-optimization-history"
 ```
 
 If the target agent does not support symlinks, copy the needed skill directories
