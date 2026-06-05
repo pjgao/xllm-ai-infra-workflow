@@ -1,7 +1,7 @@
 # NPU AI Infra Skills 待实现能力与路线规划
 
 > 日期：2026-05-28  
-> 依据：当前 `pjgao/xllm-npu-optimization-skills` 仓库结构、已有 xLLM NPU 实测经验、以及后续多框架 NPU 工作流目标。
+> 依据：当前 `pjgao/xllm-ai-infra-workflow` 仓库结构、已有 xLLM NPU 实测经验、以及后续多框架 NPU 工作流目标。
 
 ## 1. 总体判断
 
@@ -360,7 +360,7 @@ reserved linear bytes、KV blocks、HBM budget 和 OOM 风险解释。
 
 ## 5. 结论
 
-`pjgao/xllm-npu-optimization-skills` 当前已经形成了公平 benchmark、证据化
+`pjgao/xllm-ai-infra-workflow` 当前已经形成了公平 benchmark、证据化
 profiling、RLCR、review、history、kernel pilot 的主线。但它现在更像“以
 xLLM 为首个落地样本的 NPU 工作流蓝图 + 少量工具”，下一阶段应该优先把它
 补成“可测试、可运行、可积累历史证据、可适配 xLLM / vLLM-Ascend /

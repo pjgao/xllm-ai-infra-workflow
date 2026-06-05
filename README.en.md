@@ -1,4 +1,4 @@
-# xLLM NPU Optimization Skills
+# xLLM AI Infra Workflow
 
 [中文](README.md)
 
@@ -8,9 +8,9 @@ first fully recorded landing target is
 [vLLM-Ascend](https://github.com/vllm-project/vllm-ascend) and SGLang NPU are
 treated as fair baselines, reusable references, and future adaptation targets.
 
-This repository is not a loose collection of tuning notes. It is an
-**Evidence-Driven NPU AI Infra Workflow** for performance, accuracy, profiling,
-incident triage, code review, and PR-driven optimization.
+This repository is not a loose collection of tuning notes. It is an **xLLM AI
+Infra Workflow** for performance, accuracy, profiling, incident triage, code
+review, and PR-driven optimization.
 
 ## Vision
 
@@ -32,7 +32,7 @@ target -> baseline -> profiling -> patch -> accuracy -> performance -> record
 
 ## Architecture
 
-![Evidence-Driven NPU AI Infra Workflow](docs/assets/npu-ai-infra-workflow.png)
+![xLLM AI Infra Workflow](docs/assets/xllm-ai-infra-workflow.png)
 
 The repository is organized around an execution loop and reusable evidence
 stores, not around one-off tuning notes:
@@ -40,8 +40,8 @@ stores, not around one-off tuning notes:
 | Layer | Entry Point | Responsibility |
 |---|---|---|
 | Orchestrator | `xllm-npu-sota-loop` | Coordinates Research, Learn, Code, Review, Validate, and Record |
-| Execution | `xllm-npu-eval-runner` | Starts or reuses services, runs evalscope perf/accuracy jobs, and collects raw artifacts |
-| Analysis | benchmark / profiler / pipeline / capacity / compute / accuracy / incident / code-review | Turns performance, accuracy, profiling, capacity, incident, and code risks into verifiable evidence |
+| Execution & Collection | `xllm-npu-eval-runner`, `xllm-npu-profiler`, `xllm-npu-incident-triage` | Starts services, runs evaluations, captures profiling, replays incidents, and collects raw artifacts |
+| Analysis & Decision | benchmark / pipeline / capacity / compute / accuracy / code-review | Turns performance, accuracy, capacity, bubbles, hardware limits, and PR risks into verifiable conclusions |
 | Supporting Knowledge | `model-pr-optimization-history`, `kernel-pilot`, `references/`, `humanize/` | Stores historical PRs, kernel experiments, artifact schemas, optimization ledgers, and lineage |
 
 A formal optimization should follow this evidence flow:

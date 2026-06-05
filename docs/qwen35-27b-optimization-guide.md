@@ -2,7 +2,7 @@
 
 > 目标：在昇腾 910B3 (A3) x4 上，将 xLLM 运行 Qwen3.5-27B 推理的性能做到最优
 > 竞品对照：vLLM-Ascend
-> 工具链：xllm-npu-optimization-skills 仓库
+> 工具链：xllm-ai-infra-workflow 仓库
 
 ---
 
@@ -156,12 +156,12 @@ Qwen3.5-27B 是一个 Dense 模型（约 27B 参数），bf16 下模型权重约
 
 ```bash
 # 查询 Qwen 系列相关 PR
-python <xllm-repo>-npu-optimization-skills/model-pr-optimization-history/scripts/query.py \
+python <workflow-repo>/model-pr-optimization-history/scripts/query.py \
   --model "Qwen" \
   --type optimization
 
 # 查询最近 3 个月的 PR
-python ../xllm-npu-optimization-skills/model-pr-optimization-history/scripts/query.py \
+python ../xllm-ai-infra-workflow/model-pr-optimization-history/scripts/query.py \
   --model "Qwen" \
   --since "2026-02-01"
 ```
@@ -169,7 +169,7 @@ python ../xllm-npu-optimization-skills/model-pr-optimization-history/scripts/que
 ### 3.2 查阅已有档案
 
 ```bash
-cat <xllm-repo>-npu-optimization-skills/model-pr-optimization-history/xllm/qwen3-core.md
+cat <workflow-repo>/model-pr-optimization-history/xllm/qwen3-core.md
 ```
 
 关注点：
@@ -209,13 +209,13 @@ EOF
 
 ```bash
 # 验证 xLLM 能启动模型
-python <xllm-repo>-npu-optimization-skills/skills/xllm-npu-benchmark/scripts/validate_framework_cli.py \
+python <workflow-repo>/skills/xllm-npu-benchmark/scripts/validate_framework_cli.py \
   --framework xllm \
   --model /models/Qwen3.5-27B \
   --extra-flags "--tensor-parallel-size 4"
 
 # 验证 vLLM-Ascend 能启动模型
-python <xllm-repo>-npu-optimization-skills/skills/xllm-npu-benchmark/scripts/validate_framework_cli.py \
+python <workflow-repo>/skills/xllm-npu-benchmark/scripts/validate_framework_cli.py \
   --framework vllm-ascend \
   --model /models/Qwen3.5-27B \
   --extra-flags "--tensor-parallel-size 4 --enforce-eager"
@@ -986,7 +986,7 @@ xllm serve /models/Qwen3.5-27B --tensor-parallel-size 4 --graph-mode npugraph_ex
 VLLM_WORKER_MULTIPROC_METHOD=spawn vllm serve /models/Qwen3.5-27B --tensor-parallel-size 4 --enforce-eager --block-size 128 --gpu-memory-utilization 0.9 --port 8000
 
 # 对比结果
-python xllm-npu-optimization-skills/skills/xllm-npu-benchmark/scripts/compare_npu_benchmark.py \
+python xllm-ai-infra-workflow/skills/xllm-npu-benchmark/scripts/compare_npu_benchmark.py \
   --xllm-results xllm_results.jsonl --vllm-results vllm_results.jsonl --output-dir comparison/
 
 # === Phase 3: Profiling ===
@@ -995,12 +995,12 @@ xllm serve /models/Qwen3.5-27B --tensor-parallel-size 4 --graph-mode npugraph_ex
 ps -ef | grep xllm
 
 MODEL=Qwen35-27B TOKENIZER=<model-root>/Qwen35-27B PORT=8080 \
-  xllm-npu-optimization-skills/skills/xllm-npu-profiler/scripts/run_profiling.sh <xllm_parent_pid> profiles/xllm full
+  xllm-ai-infra-workflow/skills/xllm-npu-profiler/scripts/run_profiling.sh <xllm_parent_pid> profiles/xllm full
 
-python xllm-npu-optimization-skills/skills/xllm-npu-profiler/scripts/analyze_xllm_npu_profile.py \
+python xllm-ai-infra-workflow/skills/xllm-npu-profiler/scripts/analyze_xllm_npu_profile.py \
   --input profiles/xllm_YYYYMMDD_HHMMSS/PROF_xxx --framework xllm --output profiles/xllm-analysis.json
 
-python xllm-npu-optimization-skills/skills/xllm-npu-profiler/scripts/render_triage_npu.py \
+python xllm-ai-infra-workflow/skills/xllm-npu-profiler/scripts/render_triage_npu.py \
   --analysis-root profiles/ --output analysis/root-cause.md
 
 # === Phase 5: 编译验证 ===

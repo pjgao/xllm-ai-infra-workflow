@@ -1,4 +1,4 @@
-# xLLM NPU Optimization Skills
+# xLLM AI Infra Workflow
 
 [English](README.en.md)
 
@@ -7,9 +7,9 @@
 [vLLM-Ascend](https://github.com/vllm-project/vllm-ascend) 和 SGLang NPU
 作为公平对照、经验迁移和后续扩展目标。
 
-本仓库的核心目标不是保存零散优化笔记，而是沉淀一套 **Evidence-Driven NPU
-AI Infra Workflow**：让 Agent 和工程师在做性能、精度、profiling、事故排障和
-PR 优化时，都能按统一证据标准闭环执行。
+本仓库的核心目标不是保存零散优化笔记，而是沉淀一套 **xLLM AI Infra
+Workflow**：让 Agent 和工程师在做性能、精度、profiling、事故排障和 PR
+优化时，都能按统一证据标准闭环执行。
 
 ## 愿景
 
@@ -29,15 +29,15 @@ PR 优化时，都能按统一证据标准闭环执行。
 
 ## 架构
 
-![Evidence-Driven NPU AI Infra Workflow](docs/assets/npu-ai-infra-workflow.png)
+![xLLM AI Infra Workflow](docs/assets/xllm-ai-infra-workflow.png)
 
 仓库按“执行闭环 + 证据库”组织，而不是按单次优化笔记堆放：
 
 | 层级 | 入口 | 职责 |
 |---|---|---|
 | Orchestrator 编排层 | `xllm-npu-sota-loop` | 串联 Research、Learn、Code、Review、Validate、Record，驱动端到端优化 |
-| Execution 执行层 | `xllm-npu-eval-runner` | 启动或复用服务，执行 evalscope 性能/精度评测，收集原始产物 |
-| Analysis 分析层 | benchmark / profiler / pipeline / capacity / compute / accuracy / incident / code-review | 把性能、精度、profiling、容量、事故和代码风险拆成可验证证据 |
+| Execution & Collection 执行采集层 | `xllm-npu-eval-runner`、`xllm-npu-profiler`、`xllm-npu-incident-triage` | 启动服务、执行评测、采集 profiling、复现事故并收集原始产物 |
+| Analysis & Decision 分析决策层 | benchmark / pipeline / capacity / compute / accuracy / code-review | 把性能、精度、容量、空泡、理论下界和 PR 风险拆成可验证结论 |
 | Supporting Knowledge 知识层 | `model-pr-optimization-history`、`kernel-pilot`、`references/`、`humanize/` | 保存历史 PR、算子实验、artifact schema、优化账本和 lineage |
 
 一轮正式优化必须沿着这条证据流闭环：
