@@ -127,3 +127,36 @@
 3. 说明优化代码是否命中了预期 timeline 事件。
 4. 如果 TPOT 没有收益，判断是优化未生效、被新瓶颈抵消，还是评测噪声。
 ```
+
+## 场景 7：xLLM 与 vLLM-Ascend 容器隔离 A/B 性能对比
+
+```text
+请使用 xllm-npu-benchmark 和 xllm-npu-eval-runner，在宿主机调度两个命名容器，
+对比 xLLM 与 vLLM-Ascend 的 Qwen3.5-27B 性能。
+
+固定配置：
+- xLLM 容器：<xllm_container>
+- vLLM-Ascend 容器：<vllm_container>
+- vLLM-Ascend 版本：0.18rc1
+- 模型权重：<model_path>
+- tokenizer：<tokenizer_path>
+- TP=2
+- dataset=random
+- input_tokens=2048
+- output_tokens=2048
+- parallel=<parallel>
+- number=<number>
+- warmup-num=<warmup_num，大于等于 2>
+- temperature=0.0
+- ignore_eos=true
+- artifact root：<run_root>
+
+要求：
+1. 不要在 xLLM 容器里安装或启动 vLLM-Ascend；宿主机负责 docker exec 调度。
+2. 正式 benchmark 使用命名长驻容器，不默认使用 docker run --rm。
+3. 两边使用同一模型权重、同一 tokenizer、同一物理 NPU 型号/卡数/可见卡顺序。
+4. 每个框架 run 前后保存宿主机 npu-smi、进程表、CPU/memory/load 快照。
+5. 保存容器名、镜像 tag/digest、框架 commit 或 package 版本、启动命令、端口和日志。
+6. evalscope 优先在宿主机或统一 client 容器运行；若在服务容器内运行，记录 evalscope 版本。
+7. 输出 TTFT、TPOT、TPS、Output throughput、P50/P90/P99，并说明结果是否可作为正式结论。
+```
