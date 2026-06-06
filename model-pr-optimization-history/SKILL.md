@@ -3,7 +3,7 @@ name: model-pr-optimization-history
 description: 查询 xLLM 历史 PR 中的优化信息，辅助当前模型的优化决策。
 ---
 
-# Model PR Optimization History
+# 模型 PR 优化历史
 
 通过查询本地模型档案和历史 PR 经验，获取模型相关的优化、风险和验证记录，
 避免重复工作。该 skill 是 RLCR 中的 Learn 阶段入口。

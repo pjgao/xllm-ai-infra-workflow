@@ -3,7 +3,7 @@ name: xllm-npu-kernel-pilot
 description: xLLM NPU 算子 kernel 开发与调优 pilot，用于生成 PyTorch/torch_npu、Triton-Ascend、TileLang 或 AscendC kernel，并在 A2/A3 上验证性能。
 ---
 
-# xLLM NPU Kernel Pilot
+# xLLM NPU 算子开发与调优 Pilot
 
 为 xLLM 在昇腾 NPU A2/A3 上开发高性能算子 kernel，支持 PyTorch/torch_npu、
 Triton-Ascend、TileLang（DSL）和 AscendC（C++）多种实现路径。
@@ -181,7 +181,7 @@ kernel-pilot 完成后输出：
 - 与 reference 对齐: [Pass | Fail]
 ```
 
-## Knowledge and References
+## 知识库与参考资料
 
 `knowledge/` 放实现模式、cookbook 片段和调优经验，会随项目经验持续演进：
 

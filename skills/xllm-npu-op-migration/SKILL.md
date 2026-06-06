@@ -3,7 +3,7 @@ name: xllm-npu-op-migration
 description: xLLM NPU 算子迁移与接入流程。用于分析 torch_npu_ops、xllm_ops、PyTorch/torch_npu、Triton-Ascend、AscendC 自定义算子，并将候选算子迁移到 xLLM 的 CMake、op_host、op_kernel、EXEC_NPU_CMD、Python/C++ wrapper 和端到端验证闭环。
 ---
 
-# xLLM NPU Op Migration
+# xLLM NPU 算子迁移
 
 用于把外部或实验性 NPU 算子迁移到 xLLM，并留下可复查的精度、性能和
 profiling 证据。
@@ -133,4 +133,3 @@ profiling 证据。
 - MTP/speculative:
 - Memory/workspace:
 ```
-

@@ -1,41 +1,40 @@
 ---
 name: xllm-npu-pipeline-analysis
-description: NPU serving pipeline and layer-level analysis for xLLM, vLLM-Ascend, and SGLang. Use when the user asks about prefill/decode boundaries, layer timing, rank skew, graph replay gaps, host bubbles between decode steps, or mapping profiling timeline events back to framework pipeline stages.
+description: xLLM、vLLM-Ascend、SGLang 的 NPU serving pipeline 和 layer-level 分析。用于分析 prefill/decode 边界、layer timing、rank skew、graph replay gaps、decode step 间 host bubbles，或把 profiling timeline 事件映射回框架 pipeline 阶段。
 ---
 
-# xLLM NPU Pipeline Analysis
+# xLLM NPU Pipeline 分析
 
-Use this skill when a five-table profiling report is not enough and the task
-needs stage, layer, rank, or decode-step boundary reasoning.
+当五表 profiling 报告不足以解释问题，并且需要按 stage、layer、rank 或 decode-step
+边界推理时使用本 skill。
 
-## Inputs
+## 输入
 
-- Profiling artifact that follows
+- 遵循
   [`../../references/profiling-artifact-schema.md`](../../references/profiling-artifact-schema.md).
-- Workload shape: input tokens, output tokens, parallel, warmup.
-- Framework startup command and commit.
-- Optional source-map notes from `xllm-npu-profiler`.
+  的 profiling artifact。
+- Workload shape：input tokens、output tokens、parallel、warmup。
+- 框架启动命令和 commit。
+- 可选：来自 `xllm-npu-profiler` 的 source-map notes。
 
-## Workflow
+## 工作流
 
-1. Split the trace into prefill, decode, graph replay, communication, and
-   postprocess regions.
-2. Identify repeated decode-step boundaries. For xLLM decode, pay attention to
-   intervals such as `replaceToken` end to next `GatherV2` start.
-3. Build tables:
+1. 将 trace 拆成 prefill、decode、graph replay、communication 和 postprocess 区间。
+2. 识别重复的 decode-step 边界。对 xLLM decode，重点关注
+   `replaceToken` 结束到下一轮 `GatherV2` 开始这类间隔。
+3. 构建表格：
 
-   | Table | Purpose |
+   | 表 | 目的 |
    |---|---|
-   | Stage table | Prefill/decode/postprocess latency by step |
-   | Layer table | Representative layer latency and top kernels |
-   | Rank skew table | Slow rank vs fast rank and HCCL wait |
-   | Bubble table | Host gap, copy, setup, synchronization, graph replay |
+   | Stage table | 按 step 统计 prefill/decode/postprocess latency |
+   | Layer table | 代表性 layer latency 和 top kernels |
+   | Rank skew table | 慢 rank、快 rank 与 HCCL wait |
+   | Bubble table | Host gap、copy、setup、synchronization、graph replay |
 
-4. Map top timeline events back to likely source areas.
-5. Propose only optimizations that can be validated by a before/after
-   non-profiling performance run plus a follow-up trace.
+4. 将 top timeline events 映射回可能的源码区域。
+5. 只提出可验证的优化：必须能通过 before/after 无 profiling 性能跑分和后续 trace 复核。
 
-## Output
+## 输出
 
 ```text
 profiling/<run_id>/
@@ -45,14 +44,14 @@ profiling/<run_id>/
   bubble-table.csv
 ```
 
-The report must clearly separate:
+报告必须清楚区分：
 
-- Device compute bottlenecks.
-- Communication/rank skew bottlenecks.
-- Hostbound dispatch bubbles.
-- Postprocess or sampling overhead.
+- Device compute 瓶颈。
+- Communication/rank skew 瓶颈。
+- Hostbound dispatch bubbles。
+- Postprocess 或 sampling overhead。
 
-## References
+## 参考资料
 
 - [`references/pipeline-boundaries.md`](references/pipeline-boundaries.md)
 - [`../xllm-npu-profiler/references/source-map.md`](../xllm-npu-profiler/references/source-map.md)
