@@ -149,9 +149,10 @@ Research → Learn → Code → Review → Validate → Record
 
 | Prompt | 场景 |
 |---|---|
-| [`xllm-npu-sota-loop-prompts.md`](prompts/xllm-npu-sota-loop-prompts.md) | 端到端性能优化、decode gap、投机接受率验证 |
-| [`xllm-npu-pr-fix-prompts.md`](prompts/xllm-npu-pr-fix-prompts.md) | PR 回归修复、精度异常、crash、review 回复 |
-| [`xllm-npu-op-migration-prompts.md`](prompts/xllm-npu-op-migration-prompts.md) | NPU 算子迁移、算子优化、kernel-pilot 准入 |
+| [`xllm-npu-sota-loop-prompts.md`](prompts/xllm-npu-sota-loop-prompts.md) | 端到端 SOTA 优化、TPOT 目标优化、decode 空泡、MTP 接受率 |
+| [`xllm-npu-eval-profiler-prompts.md`](prompts/xllm-npu-eval-profiler-prompts.md) | 服务启动、evalscope 性能/精度评测、profiling、容量/OOM |
+| [`xllm-npu-pr-fix-prompts.md`](prompts/xllm-npu-pr-fix-prompts.md) | PR 回归修复、精度异常、crash、review 回复、rebase、编译 UT |
+| [`xllm-npu-op-migration-prompts.md`](prompts/xllm-npu-op-migration-prompts.md) | NPU 算子迁移、torch_npu/Triton-Ascend/AscendC/ATB 接入、kernel-pilot 准入 |
 
 Prompt 负责启动任务；skill 负责执行细节和证据门禁。
 

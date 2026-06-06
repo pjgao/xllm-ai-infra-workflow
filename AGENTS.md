@@ -181,6 +181,7 @@ python kernel-pilot/tools/npu-op-benchmark.py --op swiglu --shapes "128,4096" --
 根目录 [`prompts/`](prompts/) 保存可直接交给 agent 的任务模板：
 
 - `xllm-npu-sota-loop-prompts.md`：端到端性能优化、decode gap、投机接受率验证。
+- `xllm-npu-eval-profiler-prompts.md`：服务启动、evalscope 性能/精度、profiling、容量/OOM。
 - `xllm-npu-pr-fix-prompts.md`：PR 精度/性能/事故回归修复、review 回复。
 - `xllm-npu-op-migration-prompts.md`：torch_npu / Triton-Ascend / AscendC / ATB 算子迁移。
 

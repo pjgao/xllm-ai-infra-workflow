@@ -158,9 +158,10 @@ each skill, copy a template from [`prompts/`](prompts/):
 
 | Prompt | Scenario |
 |---|---|
-| [`xllm-npu-sota-loop-prompts.md`](prompts/xllm-npu-sota-loop-prompts.md) | End-to-end performance optimization, decode-gap analysis, speculative accept-rate validation |
-| [`xllm-npu-pr-fix-prompts.md`](prompts/xllm-npu-pr-fix-prompts.md) | PR regression fixes, accuracy bugs, crashes, review replies |
-| [`xllm-npu-op-migration-prompts.md`](prompts/xllm-npu-op-migration-prompts.md) | NPU operator migration, operator optimization, kernel-pilot gates |
+| [`xllm-npu-sota-loop-prompts.md`](prompts/xllm-npu-sota-loop-prompts.md) | Chinese prompts for SOTA optimization, TPOT targets, decode gaps, and MTP accept-rate validation |
+| [`xllm-npu-eval-profiler-prompts.md`](prompts/xllm-npu-eval-profiler-prompts.md) | Chinese prompts for service startup, evalscope perf/accuracy, profiling, capacity, and OOM analysis |
+| [`xllm-npu-pr-fix-prompts.md`](prompts/xllm-npu-pr-fix-prompts.md) | Chinese prompts for PR regressions, accuracy bugs, crashes, review replies, rebase, build, and UT gates |
+| [`xllm-npu-op-migration-prompts.md`](prompts/xllm-npu-op-migration-prompts.md) | Chinese prompts for NPU op migration, torch_npu/Triton-Ascend/AscendC/ATB integration, and kernel-pilot gates |
 
 Prompts start the task. Skills define the execution details and evidence gates.
 
