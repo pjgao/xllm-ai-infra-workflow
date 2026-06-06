@@ -1,11 +1,12 @@
 ---
 name: xllm-npu-kernel-pilot
-description: xLLM NPU 算子 kernel 开发与调优 pilot，用于生成 TileLang / AscendC kernel 并在 A3 上验证性能。
+description: xLLM NPU 算子 kernel 开发与调优 pilot，用于生成 PyTorch/torch_npu、Triton-Ascend、TileLang 或 AscendC kernel，并在 A2/A3 上验证性能。
 ---
 
 # xLLM NPU Kernel Pilot
 
-为 xLLM 在昇腾 NPU 910B3 (A3) 上开发高性能算子 kernel，支持 TileLang（DSL）和 AscendC（C++）两种编写方式。
+为 xLLM 在昇腾 NPU A2/A3 上开发高性能算子 kernel，支持 PyTorch/torch_npu、
+Triton-Ascend、TileLang（DSL）和 AscendC（C++）多种实现路径。
 
 ## 准入条件
 
@@ -49,19 +50,21 @@ elif kernel 是全新算子:
 #### 2.2 Tiling 策略
 
 基于目标硬件规格（A3 参考 `references/a3-specs.md`，A2/910B 参考
-`references/a2-910b-specs.md`）：
+`references/a2-910b-specs.md`）。注意：产品页峰值只用于粗估，正式 tiling
+必须通过 CANN PlatformAscendC API 和 profiling 查询当前平台资源：
 
 | 资源 | 规格 |
 |------|------|
-| AICore 数量 | 32 |
-| UB (Unified Buffer) | 2MB per AICore |
-| L1 Cache | 384KB per AICore |
-| L2 Global | 共享（容量依 A3 规格） |
+| Core 数 | 用 `GetCoreNum()` 查询；A2/A3 分离架构下返回值需按 CANN 文档解释 |
+| UB / L1 / L0 / L2 / HBM | 用 `GetCoreMemSize(CoreMemType::*)` 查询 |
+| HBM 容量和带宽 | 用产品规格做粗估，用 `npu-smi info` 和 profiling 做正式记录 |
+| 互联带宽 | 用产品规格做背景说明，用 HCCL/profiling artifact 判断实际瓶颈 |
 
 Tiling 原则：
-- tile_size 确保 double buffer 不超 UB（2 tiles of input + 1 tile of output < 2MB）
-- 尽量让 tile_M * tile_K * 2（fp16） + tile_K * tile_N * 2 < 2MB
-- block_num 尽量 = AICore 数量 × 2（保证流水线填充）
+- tile_size 确保 double buffer 不超过查询得到的 UB/L1/L0 预算。
+- MatMul/Cube 路径同时考虑 L1、L0A/L0B、L0C、FixPipe 和 workspace。
+- Vector 路径重点考虑 UB、MTE2 load、MTE3 store 和 32B 对齐。
+- `blockDim` 基于 `GetCoreNum()` 和实际 occupancy 调整，不写死为固定 core 数。
 
 ### Step 3: 实现
 
@@ -190,7 +193,7 @@ kernel-pilot 完成后输出：
 `references/` 放硬件事实、稳定约束和 source-of-truth 规格，应只在目标平台或
 支持范围变化时更新：
 
-- `kernel-pilot/references/a3-specs.md` — Ascend 910B3 / A3 规格
+- `kernel-pilot/references/a3-specs.md` — Ascend A3 产品族规格
 - `kernel-pilot/references/a2-910b-specs.md` — Ascend 910B / A2 规格
 
 ## 与 xllm-npu-sota-loop 的关系

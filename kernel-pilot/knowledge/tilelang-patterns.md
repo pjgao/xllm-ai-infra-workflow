@@ -34,11 +34,14 @@ def my_kernel(
 
 ## MatMul Tiling 策略
 
-### A3 推荐配置
+### A2/A3 初始配置
 
 ```python
-# A3: UB=2MB, AICore=32
-# 双 buffer: 2*(tile_M*K + K*tile_N)*2 bytes + tile_M*tile_N*2 < 2MB
+# 先通过 PlatformAscendC / profiling 查询 UB、L1、L0 和 core 数；
+# 下列 tile 只是启动搜索的初始候选，不是跨 A2/A3 通用常量。
+# 双 buffer 估算:
+# 2*(tile_M*K + K*tile_N)*dtype_bytes + tile_M*tile_N*dtype_bytes
+# 必须小于查询得到的 local memory budget。
 
 # 小 batch (decode)
 tile_M, tile_N, tile_K = 16, 128, 64
@@ -61,8 +64,8 @@ def ub_usage(tile_M, tile_N, tile_K, dtype_bytes=2):
     c_size = tile_M * tile_N * dtype_bytes
     return a_size + b_size + c_size
 
-# A3 max UB per AICore = 2MB
-assert ub_usage(64, 128, 64) <= 2 * 1024 * 1024
+# ub_budget_bytes 必须来自 GetCoreMemSize(CoreMemType::UB) 或运行时 profile。
+assert ub_usage(64, 128, 64) <= ub_budget_bytes
 ```
 
 ## Softmax Pattern

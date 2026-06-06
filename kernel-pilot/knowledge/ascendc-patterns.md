@@ -90,9 +90,10 @@ __global__ void vec_mul_kernel(GM_ADDR x, GM_ADDR y, GM_ADDR z, int size) {
 ## MatMul 优化模式
 
 ```cpp
-// 使用 CUBE 单元（AICore 内的 MatMul 加速器）
+// 使用 CUBE 单元（AI Core 内的 MatMul 加速器）
 // 支持 shape: (M, K) x (K, N) → (M, N)
-// A3 CUBE 基础 tile: 16x16 (fp16)
+// fp16 Cube 指令通常以 16x16 cube 为基础；实际 tile 还要结合
+// GetCoreMemSize 查询到的 L1/L0/UB 预算。
 
 constexpr int TILE_M = 64;
 constexpr int TILE_K = 32;
