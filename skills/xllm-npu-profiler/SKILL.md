@@ -21,6 +21,14 @@ run 元信息遵循
 [`../../references/run-manifest-template.md`](../../references/run-manifest-template.md)。
 Profiling run 用于解释瓶颈，不直接替代无 profiling 的 before/after 性能数据。
 
+当 profiling 结论涉及 decode-step gap、graph replay gap、host bubble、pipeline
+边界或 xLLM/vLLM-Ascend pipeline 差异时，必须联动
+[`xllm-npu-pipeline-analysis`](../xllm-npu-pipeline-analysis/SKILL.md)，并在对应
+profiling run 目录生成它要求的 pipeline artifact。最低要求是
+`manifest.md`、`timeline_notes.md`、`pipeline-analysis.md`、`bubble-table.csv`、
+`stage-table.csv`、`rank-skew-table.csv` 和 `analysis.json`；缺失时不得把该
+profiling 作为正式 hostbound 结论。
+
 ## 能力矩阵
 
 | 能力 | xLLM | vLLM-Ascend |

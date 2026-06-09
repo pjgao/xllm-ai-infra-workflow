@@ -132,6 +132,12 @@ gap = (vllm_best_throughput - xllm_best_throughput) / vllm_best_throughput × 10
 - 必须使用 benchmark 慢场景的实际 input/output 长度（不用默认短输入）
 - Prefill 和 Decode 必须分离采集
 - 两阶段 trace（eager/graph-on）推荐
+- 如果根因涉及 decode step 空泡、graph replay gap、hostbound dispatch 或跨框架
+  pipeline 差异，必须调用
+  [`xllm-npu-pipeline-analysis`](../xllm-npu-pipeline-analysis/SKILL.md) 并生成
+  `pipeline-analysis.md`、`bubble-table.csv`、`stage-table.csv`、
+  `rank-skew-table.csv` 和 `analysis.json`。缺少这些 schema artifact 时，
+  Phase 3 只能标记为 `SCHEMA_INCOMPLETE`，不得进入正式 patch 决策。
 
 产出：
 - `profiles/xllm/` — xLLM Profiling 数据
