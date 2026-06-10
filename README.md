@@ -1,5 +1,9 @@
 # xLLM AI Infra Workflow
 
+-----------------
+This repo has moved to https://github.com/xLLM-AI/xllm-workflow ！！！！！！
+-----------------
+
 [English](README.en.md)
 
 面向昇腾 NPU 大模型推理优化的 Agent-ready workflow 仓库。它以
